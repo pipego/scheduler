@@ -96,10 +96,10 @@ func TestRunFetch(t *testing.T) {
 	}
 
 	res := pl.RunFetch("invalid", "")
-	assert.LessOrEqual(t, int64(0), res.AllocatableResource.MilliCPU)
+	assert.LessOrEqual(t, res.AllocatableResource.MilliCPU, int64(0))
 
 	res = pl.RunFetch("LocalHost", "127.0.0.1")
-	assert.Greater(t, int64(0), res.AllocatableResource.MilliCPU)
+	assert.Greater(t, res.AllocatableResource.MilliCPU, int64(0))
 }
 
 func TestRunFilter(t *testing.T) {
@@ -154,10 +154,10 @@ func TestRunScore(t *testing.T) {
 	}
 
 	res := pl.RunScore("invalid", nil)
-	assert.Less(t, int64(0), res.Score)
+	assert.Less(t, res.Score, int64(0))
 
 	args := &common.Args{}
 
 	res = pl.RunScore("NodeResourcesFit", args)
-	assert.GreaterOrEqual(t, int64(0), res.Score)
+	assert.GreaterOrEqual(t, res.Score, int64(0))
 }

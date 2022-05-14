@@ -155,15 +155,16 @@ func initHelper(name, _path string, impl gop.Plugin) (interface{}, error) {
 		Logger:          logger,
 		Plugins:         plugins,
 	})
-	defer client.Kill()
 
 	rpcClient, err := client.Client()
 	if err != nil {
+		client.Kill()
 		return nil, errors.Wrap(err, "failed to create")
 	}
 
 	raw, err := rpcClient.Dispense(name)
 	if err != nil {
+		client.Kill()
 		return nil, errors.Wrap(err, "failed to dispense")
 	}
 
