@@ -38,12 +38,6 @@ docker run -v "$PWD"/config:/tmp ghcr.io/pipego/scheduler:latest --config-file=/
 
 
 
-## Plugin
-
-See [README](https://github.com/pipego/scheduler/blob/main/plugin/README.md) on how to build *scheduler* plugin.
-
-
-
 ## Usage
 
 ```
@@ -152,6 +146,14 @@ spec:
   }
 }
 ```
+
+
+
+## plugins
+
+- [plugin-fetch](https://github.com/pipego/plugin-fetch)
+- [plugin-filter](https://github.com/pipego/plugin-filter)
+- [plugin-score](https://github.com/pipego/plugin-score)
 
 
 
