@@ -119,7 +119,6 @@ func (p *plugin) Init() error {
 	return nil
 }
 
-// nolint: typecheck
 func initPlugin(cfg *config.Plugin, impl gop.Plugin) (map[string]interface{}, error) {
 	var err error
 	pl := make(map[string]interface{})
@@ -147,7 +146,7 @@ func initPlugin(cfg *config.Plugin, impl gop.Plugin) (map[string]interface{}, er
 	return pl, nil
 }
 
-func initHelper[R FetchRoutine | FilterRoutine | ScoreRoutine](name, path string, impl gop.Plugin) (R, error) {
+func initHelper(name, path string, impl gop.Plugin) (interface{}, error) {
 	plugins := map[string]gop.Plugin{
 		name: impl,
 	}
@@ -170,7 +169,7 @@ func initHelper[R FetchRoutine | FilterRoutine | ScoreRoutine](name, path string
 		return nil, errors.Wrap(err, "failed to dispense")
 	}
 
-	return raw.(R), nil
+	return raw, nil
 }
 
 func (p *plugin) RunFetch(name, host string) FetchResult {

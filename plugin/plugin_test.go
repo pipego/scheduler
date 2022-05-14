@@ -24,7 +24,7 @@ func TestInitPlugin(t *testing.T) {
 
 	cfg.Enabled = []config.Enabled{}
 
-	buf, err = initPlugin(&cfg, &Fetch{})
+	_, err = initPlugin(&cfg, &Fetch{})
 	assert.NotEqual(t, nil, err)
 
 	cfg.Disabled = []config.Disabled{}
@@ -40,7 +40,7 @@ func TestInitPlugin(t *testing.T) {
 		},
 	}
 
-	buf, err = initPlugin(&cfg, &Fetch{})
+	_, err = initPlugin(&cfg, &Fetch{})
 	assert.NotEqual(t, nil, err)
 
 	cfg.Disabled = []config.Disabled{
@@ -57,7 +57,7 @@ func TestInitPlugin(t *testing.T) {
 		},
 	}
 
-	buf, err = initPlugin(&cfg, &Fetch{})
+	_, err = initPlugin(&cfg, &Fetch{})
 	assert.NotEqual(t, nil, err)
 
 	cfg.Disabled = []config.Disabled{}
