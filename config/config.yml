@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: scheduler
+metadata:
+  name: scheduler
+spec:
+  fetch:
+    disabled:
+      - name: LocalHost
+        path: plugin/fetch-localhost
+      - name: MetalFlow
+        path: plugin/fetch-metalflow
+  filter:
+    enabled:
+      - name: NodeName
+        path: plugin/filter-nodename
+        weight: 1
+      - name: NodeResourcesFit
+        path: plugin/filter-noderesourcesfit
+        weight: 1
+      - name: NodeAffinity
+        path: plugin/filter-nodeaffinity
+        weight: 1
+      - name: NodeUnschedulable
+        path: plugin/filter-nodeunschedulable
+        weight: 1
+  score:
+    enabled:
+      - name: NodeResourcesBalancedAllocation
+        path: plugin/score-noderesourcesbalancedallocation
+        weight: 1
+      - name: NodeResourcesFit
+        path: plugin/score-noderesourcesfit
+        weight: 1

@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+option go_package = "github.com/pipego/scheduler/server";
+
+package server;
+
+// The service definition.
+service ServerProto {
+  rpc SendServer (ServerRequest) returns (ServerReply) {}
+}
+
+// The request message.
+message ServerRequest {
+  string apiVersion = 1;
+  string kind = 2;
+  Metadata metadata = 3;
+  Spec spec = 4;
+}
+
+message Metadata {
+  string name = 1;
+}
+
+message Spec {
+  Task task = 1;
+  repeated Node nodes = 2;
+}
+
+message Task {
+  string name = 1;
+  string nodeName = 2;
+  NodeSelector nodeSelector = 3;
+  RequestedResource requestedResource = 4;
+  bool toleratesUnschedulable = 5;
+}
+
+message Node {
+  string name = 1;
+  string host = 2;
+  NodeLabel label = 3;
+  AllocatableResource allocatableResource = 4;
+  RequestedResource requestedResource = 5;
+  bool unschedulable = 6;
+}
+
+message AllocatableResource {
+  int64 milliCPU = 1;
+  int64 memory = 2;
+  int64 storage = 3;
+}
+
+message Label {
+  string name = 1;
+}
+
+message NodeLabel {
+  Label label = 1;
+}
+
+message NodeSelector {
+  Selector selector = 1;
+}
+
+message RequestedResource {
+  int64 milliCPU = 1;
+  int64 memory = 2;
+  int64 storage = 3;
+}
+
+message Selector {
+  repeated string name = 1;
+}
+
+// The response message.
+message ServerReply {
+  string name = 1;
+  string error = 2;
+}
