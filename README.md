@@ -69,30 +69,30 @@ spec:
   fetch:
     disabled:
       - name: LocalHost
-        path: plugin/fetch-localhost
+        path: ./plugin/fetch-localhost
       - name: MetalFlow
-        path: plugin/fetch-metalflow
+        path: ./plugin/fetch-metalflow
   filter:
     enabled:
       - name: NodeName
-        path: plugin/filter-nodename
+        path: ./plugin/filter-nodename
         weight: 4
       - name: NodeAffinity
-        path: plugin/filter-nodeaffinity
+        path: ./plugin/filter-nodeaffinity
         weight: 3
       - name: NodeResourcesFit
-        path: plugin/filter-noderesourcesfit
+        path: ./plugin/filter-noderesourcesfit
         weight: 2
       - name: NodeUnschedulable
-        path: plugin/filter-nodeunschedulable
+        path: ./plugin/filter-nodeunschedulable
         weight: 1
   score:
     enabled:
       - name: NodeResourcesFit
-        path: plugin/score-noderesourcesfit
+        path: ./plugin/score-noderesourcesfit
         weight: 2
       - name: NodeResourcesBalancedAllocation
-        path: plugin/score-noderesourcesbalancedallocation
+        path: ./plugin/score-noderesourcesbalancedallocation
         weight: 1
 ```
 

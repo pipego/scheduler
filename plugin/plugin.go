@@ -36,12 +36,6 @@ type Config struct {
 	Config config.Config
 }
 
-type FetchRoutine func(string) FetchResult
-
-type FilterRoutine func(args *common.Args) FilterResult
-
-type ScoreRoutine func(args *common.Args) ScoreResult
-
 type FetchResult struct {
 	AllocatableResource common.Resource
 	RequestedResource   common.Resource
@@ -57,9 +51,9 @@ type ScoreResult struct {
 
 type plugin struct {
 	cfg    *Config
-	fetch  map[string]FetchRoutine
-	filter map[string]FilterRoutine
-	score  map[string]ScoreRoutine
+	fetch  map[string]FetchImpl
+	filter map[string]FilterImpl
+	score  map[string]ScoreImpl
 }
 
 var (
@@ -94,8 +88,9 @@ func (p *plugin) Init() error {
 		return errors.Wrap(err, "failed to init fetch")
 	}
 
+	p.fetch = map[string]FetchImpl{}
 	for k, v := range buf {
-		p.fetch[k] = v.(FetchRoutine)
+		p.fetch[k] = v.(FetchImpl)
 	}
 
 	buf, err = initPlugin(&p.cfg.Config.Spec.Filter, &Filter{})
@@ -103,8 +98,9 @@ func (p *plugin) Init() error {
 		return errors.Wrap(err, "failed to init filter")
 	}
 
+	p.filter = map[string]FilterImpl{}
 	for k, v := range buf {
-		p.filter[k] = v.(FilterRoutine)
+		p.filter[k] = v.(FilterImpl)
 	}
 
 	buf, err = initPlugin(&p.cfg.Config.Spec.Score, &Score{})
@@ -112,8 +108,9 @@ func (p *plugin) Init() error {
 		return errors.Wrap(err, "failed to init score")
 	}
 
+	p.score = map[string]ScoreImpl{}
 	for k, v := range buf {
-		p.score[k] = v.(ScoreRoutine)
+		p.score[k] = v.(ScoreImpl)
 	}
 
 	return nil
@@ -121,6 +118,7 @@ func (p *plugin) Init() error {
 
 func initPlugin(cfg *config.Plugin, impl gop.Plugin) (map[string]interface{}, error) {
 	var err error
+
 	pl := make(map[string]interface{})
 
 	for _, item := range cfg.Disabled {
@@ -146,13 +144,13 @@ func initPlugin(cfg *config.Plugin, impl gop.Plugin) (map[string]interface{}, er
 	return pl, nil
 }
 
-func initHelper(name, path string, impl gop.Plugin) (interface{}, error) {
+func initHelper(name, _path string, impl gop.Plugin) (interface{}, error) {
 	plugins := map[string]gop.Plugin{
 		name: impl,
 	}
 
 	client := gop.NewClient(&gop.ClientConfig{
-		Cmd:             exec.Command(path),
+		Cmd:             exec.Command(_path),
 		HandshakeConfig: handshake,
 		Logger:          logger,
 		Plugins:         plugins,
@@ -177,7 +175,7 @@ func (p *plugin) RunFetch(name, host string) FetchResult {
 		return FetchResult{}
 	}
 
-	return p.fetch[name](host)
+	return p.fetch[name].Run(host)
 }
 
 func (p *plugin) RunFilter(name string, args *common.Args) FilterResult {
@@ -185,7 +183,7 @@ func (p *plugin) RunFilter(name string, args *common.Args) FilterResult {
 		return FilterResult{Error: "invalid name"}
 	}
 
-	return p.filter[name](args)
+	return p.filter[name].Run(args)
 }
 
 func (p *plugin) RunScore(name string, args *common.Args) ScoreResult {
@@ -193,5 +191,5 @@ func (p *plugin) RunScore(name string, args *common.Args) ScoreResult {
 		return ScoreResult{Score: -1}
 	}
 
-	return p.score[name](args)
+	return p.score[name].Run(args)
 }

@@ -32,11 +32,11 @@ func TestInitPlugin(t *testing.T) {
 	cfg.Enabled = []config.Enabled{
 		{
 			Name: "LocalHost",
-			Path: "plugin/fetch-localhost",
+			Path: "./fetch-localhost",
 		},
 		{
 			Name: "LocalHost",
-			Path: "plugin/fetch-localhost",
+			Path: "./fetch-localhost",
 		},
 	}
 
@@ -46,14 +46,14 @@ func TestInitPlugin(t *testing.T) {
 	cfg.Disabled = []config.Disabled{
 		{
 			Name: "LocalHost",
-			Path: "plugin/fetch-localhost",
+			Path: "./fetch-localhost",
 		},
 	}
 
 	cfg.Enabled = []config.Enabled{
 		{
 			Name: "LocalHost",
-			Path: "plugin/fetch-localhost",
+			Path: "./fetch-localhost",
 		},
 	}
 
@@ -65,7 +65,7 @@ func TestInitPlugin(t *testing.T) {
 	cfg.Enabled = []config.Enabled{
 		{
 			Name: "LocalHost",
-			Path: "plugin/fetch-localhost",
+			Path: "./fetch-localhost",
 		},
 	}
 
@@ -82,7 +82,7 @@ func TestRunFetch(t *testing.T) {
 	cfg.Enabled = []config.Enabled{
 		{
 			Name: "LocalHost",
-			Path: "plugin/fetch-localhost",
+			Path: "./fetch-localhost",
 		},
 	}
 
@@ -90,15 +90,16 @@ func TestRunFetch(t *testing.T) {
 
 	pl := plugin{}
 
+	pl.fetch = map[string]FetchImpl{}
 	for k, v := range buf {
-		pl.fetch[k] = v.(FetchRoutine)
+		pl.fetch[k] = v.(*FetchRPC)
 	}
 
 	res := pl.RunFetch("invalid", "")
-	assert.LessOrEqual(t, 0, res.AllocatableResource.MilliCPU)
+	assert.LessOrEqual(t, int64(0), res.AllocatableResource.MilliCPU)
 
 	res = pl.RunFetch("LocalHost", "127.0.0.1")
-	assert.Greater(t, 0, res.AllocatableResource.MilliCPU)
+	assert.Greater(t, int64(0), res.AllocatableResource.MilliCPU)
 }
 
 func TestRunFilter(t *testing.T) {
@@ -109,7 +110,7 @@ func TestRunFilter(t *testing.T) {
 	cfg.Enabled = []config.Enabled{
 		{
 			Name: "NodeName",
-			Path: "plugin/filter-nodename",
+			Path: "./filter-nodename",
 		},
 	}
 
@@ -117,8 +118,9 @@ func TestRunFilter(t *testing.T) {
 
 	pl := plugin{}
 
+	pl.filter = map[string]FilterImpl{}
 	for k, v := range buf {
-		pl.filter[k] = v.(FilterRoutine)
+		pl.filter[k] = v.(*FilterRPC)
 	}
 
 	res := pl.RunFilter("invalid", nil)
@@ -138,7 +140,7 @@ func TestRunScore(t *testing.T) {
 	cfg.Enabled = []config.Enabled{
 		{
 			Name: "NodeResourcesFit",
-			Path: "plugin/score-noderesourcesfit",
+			Path: "./score-noderesourcesfit",
 		},
 	}
 
@@ -146,15 +148,16 @@ func TestRunScore(t *testing.T) {
 
 	pl := plugin{}
 
+	pl.score = map[string]ScoreImpl{}
 	for k, v := range buf {
-		pl.score[k] = v.(ScoreRoutine)
+		pl.score[k] = v.(*ScoreRPC)
 	}
 
 	res := pl.RunScore("invalid", nil)
-	assert.Less(t, 0, res.Score)
+	assert.Less(t, int64(0), res.Score)
 
 	args := &common.Args{}
 
 	res = pl.RunScore("NodeResourcesFit", args)
-	assert.GreaterOrEqual(t, 0, res.Score)
+	assert.GreaterOrEqual(t, int64(0), res.Score)
 }
