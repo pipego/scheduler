@@ -8,7 +8,8 @@ for item in $(ls $filepath); do
     for name in "$filepath"/"$item"/*.go; do
       buf=${name%.go}
       name=${buf##*/}
-      CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-s -w" -o plugin/"$item"-"$name" "$filepath"/"$item"/"$name".go
+      # go tool dist list
+      CGO_ENABLED=0 GOARCH=$(go env GOARCH) GOOS=$(go env GOOS) go build -ldflags "-s -w" -o plugin/"$item"-"$name" "$filepath"/"$item"/"$name".go
     done
   fi
 done
