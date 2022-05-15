@@ -144,7 +144,7 @@ func (s *scheduler) runFilterPlugins(task *common.Task, nodes []*common.Node) ([
 
 	pl := s.cfg.Config.Spec.Filter.Enabled
 	sort.Slice(pl, func(i, j int) bool {
-		return pl[i].Weight > pl[j].Weight
+		return pl[i].Priority > pl[j].Priority
 	})
 
 	// TODO: Set in parallel
@@ -159,8 +159,38 @@ func (s *scheduler) runFilterPlugins(task *common.Task, nodes []*common.Node) ([
 }
 
 func (s *scheduler) runScorePlugins(task *common.Task, nodes []*common.Node) ([]nodeScore, error) {
-	// TODO: Add implementation
-	return nil, nil
+	var buf []nodeScore
+
+	scoreHelper := func(c config.Enabled, t *common.Task, n []*common.Node) []nodeScore {
+		var b []nodeScore
+		for i := range n {
+			if res, err := s.cfg.Plugin.RunScore(c.Name, t, n[i]); err == nil {
+				if res.Score >= common.MinNodeScore && res.Score <= common.MaxNodeScore {
+					b = append(b, nodeScore{
+						name:  n[i].Name,
+						score: res.Score * c.Weight,
+					})
+				}
+			}
+		}
+		return b
+	}
+
+	if len(s.cfg.Config.Spec.Score.Enabled) == 0 {
+		return nil, errors.New("invalid enabled")
+	}
+
+	pl := s.cfg.Config.Spec.Score.Enabled
+
+	// TODO: Set in parallel
+	for _, item := range pl {
+		b := scoreHelper(item, task, nodes)
+		if len(b) != 0 {
+			buf = append(buf, b...)
+		}
+	}
+
+	return buf, nil
 }
 
 // nolint: gosec

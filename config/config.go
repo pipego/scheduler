@@ -23,14 +23,15 @@ type Plugin struct {
 }
 
 type Disabled struct {
-	Name string
-	Path string
+	Name string `yaml:"name"`
+	Path string `yaml:"path"`
 }
 
 type Enabled struct {
-	Name   string
-	Path   string
-	Weight int64
+	Name     string `yaml:"name"`
+	Path     string `yaml:"path"`
+	Priority int64  `yaml:"priority"`
+	Weight   int64  `yaml:"weight"`
 }
 
 var (
