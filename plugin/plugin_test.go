@@ -95,11 +95,11 @@ func TestRunFetch(t *testing.T) {
 		pl.fetch[k] = v.(*FetchRPC)
 	}
 
-	res := pl.RunFetch("invalid", "")
-	assert.LessOrEqual(t, res.AllocatableResource.MilliCPU, int64(0))
+	_, err := pl.RunFetch("invalid", "")
+	assert.NotEqual(t, nil, err)
 
-	res = pl.RunFetch("LocalHost", "127.0.0.1")
-	assert.Greater(t, res.AllocatableResource.MilliCPU, int64(0))
+	_, err = pl.RunFetch("LocalHost", "127.0.0.1")
+	assert.Equal(t, nil, err)
 }
 
 func TestRunFilter(t *testing.T) {
@@ -123,13 +123,14 @@ func TestRunFilter(t *testing.T) {
 		pl.filter[k] = v.(*FilterRPC)
 	}
 
-	res := pl.RunFilter("invalid", nil)
-	assert.NotEqual(t, "", res.Error)
+	task := common.Task{}
+	node := common.Node{}
 
-	args := &common.Args{}
+	_, err := pl.RunFilter("invalid", &task, &node)
+	assert.NotEqual(t, nil, err)
 
-	res = pl.RunFilter("NodeName", args)
-	assert.Equal(t, "", res.Error)
+	_, err = pl.RunFilter("NodeName", &task, &node)
+	assert.Equal(t, nil, err)
 }
 
 func TestRunScore(t *testing.T) {
@@ -153,11 +154,12 @@ func TestRunScore(t *testing.T) {
 		pl.score[k] = v.(*ScoreRPC)
 	}
 
-	res := pl.RunScore("invalid", nil)
-	assert.Less(t, res.Score, int64(0))
+	task := common.Task{}
+	node := common.Node{}
 
-	args := &common.Args{}
+	_, err := pl.RunScore("invalid", &task, &node)
+	assert.NotEqual(t, nil, err)
 
-	res = pl.RunScore("NodeResourcesFit", args)
-	assert.GreaterOrEqual(t, res.Score, int64(0))
+	_, err = pl.RunScore("NodeResourcesFit", &task, &node)
+	assert.Equal(t, nil, err)
 }

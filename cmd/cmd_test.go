@@ -31,7 +31,7 @@ func TestInitScheduler(t *testing.T) {
 	c, err := initConfig("../test/config/config.yml")
 	assert.Equal(t, nil, err)
 
-	_, err = initScheduler(c)
+	_, err = initScheduler(c, nil)
 	assert.Equal(t, nil, err)
 }
 
@@ -39,6 +39,6 @@ func TestInitServer(t *testing.T) {
 	c, err := initConfig("../test/config/config.yml")
 	assert.Equal(t, nil, err)
 
-	_, err = initServer(c, nil, nil)
+	_, err = initServer(c, nil)
 	assert.Equal(t, nil, err)
 }

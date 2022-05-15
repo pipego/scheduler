@@ -35,12 +35,12 @@ func Run() error {
 		return errors.Wrap(err, "failed to init plugin")
 	}
 
-	sched, err := initScheduler(cfg)
+	sched, err := initScheduler(cfg, pl)
 	if err != nil {
 		return errors.Wrap(err, "failed to init scheduler")
 	}
 
-	srv, err := initServer(cfg, pl, sched)
+	srv, err := initServer(cfg, sched)
 	if err != nil {
 		return errors.Wrap(err, "failed to init server")
 	}
@@ -88,18 +88,19 @@ func initPlugin(cfg *config.Config) (plugin.Plugin, error) {
 	return plugin.New(context.Background(), c), nil
 }
 
-func initScheduler(cfg *config.Config) (scheduler.Scheduler, error) {
+func initScheduler(cfg *config.Config, pl plugin.Plugin) (scheduler.Scheduler, error) {
 	c := scheduler.DefaultConfig()
 	if c == nil {
 		return nil, errors.New("failed to config")
 	}
 
 	c.Config = *cfg
+	c.Plugin = pl
 
 	return scheduler.New(context.Background(), c), nil
 }
 
-func initServer(cfg *config.Config, pl plugin.Plugin, sched scheduler.Scheduler) (server.Server, error) {
+func initServer(cfg *config.Config, sched scheduler.Scheduler) (server.Server, error) {
 	c := server.DefaultConfig()
 	if c == nil {
 		return nil, errors.New("failed to config")
@@ -107,7 +108,6 @@ func initServer(cfg *config.Config, pl plugin.Plugin, sched scheduler.Scheduler)
 
 	c.Address = *listenUrl
 	c.Config = *cfg
-	c.Plugin = pl
 	c.Scheduler = sched
 
 	return server.New(context.Background(), c), nil

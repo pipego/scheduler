@@ -15,9 +15,9 @@ import (
 
 type Plugin interface {
 	Init() error
-	RunFetch(string, string) FetchResult
-	RunFilter(string, *common.Args) FilterResult
-	RunScore(string, *common.Args) ScoreResult
+	RunFetch(string, string) (FetchResult, error)
+	RunFilter(string, *common.Task, *common.Node) (FilterResult, error)
+	RunScore(string, *common.Task, *common.Node) (ScoreResult, error)
 }
 
 type FetchImpl interface {
@@ -171,26 +171,36 @@ func initHelper(name, _path string, impl gop.Plugin) (interface{}, error) {
 	return raw, nil
 }
 
-func (p *plugin) RunFetch(name, host string) FetchResult {
+func (p *plugin) RunFetch(name, host string) (FetchResult, error) {
 	if _, ok := p.fetch[name]; !ok {
-		return FetchResult{}
+		return FetchResult{}, errors.New("invalid name")
 	}
 
-	return p.fetch[name].Run(host)
+	return p.fetch[name].Run(host), nil
 }
 
-func (p *plugin) RunFilter(name string, args *common.Args) FilterResult {
+func (p *plugin) RunFilter(name string, task *common.Task, node *common.Node) (FilterResult, error) {
 	if _, ok := p.filter[name]; !ok {
-		return FilterResult{Error: "invalid name"}
+		return FilterResult{}, errors.New("invalid name")
 	}
 
-	return p.filter[name].Run(args)
+	args := &common.Args{
+		Node: *node,
+		Task: *task,
+	}
+
+	return p.filter[name].Run(args), nil
 }
 
-func (p *plugin) RunScore(name string, args *common.Args) ScoreResult {
+func (p *plugin) RunScore(name string, task *common.Task, node *common.Node) (ScoreResult, error) {
 	if _, ok := p.score[name]; !ok {
-		return ScoreResult{Score: -1}
+		return ScoreResult{}, errors.New("invalid name")
 	}
 
-	return p.score[name].Run(args)
+	args := &common.Args{
+		Node: *node,
+		Task: *task,
+	}
+
+	return p.score[name].Run(args), nil
 }

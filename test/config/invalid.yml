@@ -7,27 +7,28 @@ spec:
     disabled:
       - name: LocalHost
         path: ./plugin/fetch-localhost
+    enabled:
       - name: MetalFlow
         path: ./plugin/fetch-metalflow
   filter:
     enabled:
       - name: NodeName
         path: ./plugin/filter-nodename
-        weight: 1
-      - name: NodeResourcesFit
-        path: ./plugin/filter-noderesourcesfit
-        weight: 1
+        weight: 4
       - name: NodeAffinity
         path: ./plugin/filter-nodeaffinity
-        weight: 1
+        weight: 3
+      - name: NodeResourcesFit
+        path: ./plugin/filter-noderesourcesfit
+        weight: 2
       - name: NodeUnschedulable
         path: ./plugin/filter-nodeunschedulable
         weight: 1
   score:
     enabled:
-      - name: NodeResourcesBalancedAllocation
-        path: ./plugin/score-noderesourcesbalancedallocation
-        weight: 1
       - name: NodeResourcesFit
         path: ./plugin/score-noderesourcesfit
+        weight: 2
+      - name: NodeResourcesBalancedAllocation
+        path: ./plugin/score-noderesourcesbalancedallocation
         weight

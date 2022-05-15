@@ -66,3 +66,7 @@ func (rpcTest) TestSendServer(t *testing.T) {
 
 	helper(t, client)
 }
+
+func (rpcTest) TestSendHelper(t *testing.T) {
+	// BYPASS
+}

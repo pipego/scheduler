@@ -70,6 +70,7 @@ spec:
     disabled:
       - name: LocalHost
         path: ./plugin/fetch-localhost
+    enabled:
       - name: MetalFlow
         path: ./plugin/fetch-metalflow
   filter:
@@ -111,11 +112,9 @@ spec:
     "task": {
       "name": "task1",
       "nodeName": "node1",
-      "nodeSelector": {
-        "diskType": [
-          "ssd"
-        ]
-      },
+      "nodeSelector": [
+        "ssd"
+      ],
       "requestedResource": {
         "milliCPU": 256,
         "memory": 512,
@@ -127,9 +126,7 @@ spec:
       {
         "name": "node1",
         "host": "127.0.0.1",
-        "label": {
-          "diskType": "ssd"
-        },
+        "label": "ssd",
         "allocatableResource": {
           "milliCPU": 1024,
           "memory": 2048,

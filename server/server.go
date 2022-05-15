@@ -10,8 +10,8 @@ import (
 
 	pb "github.com/pipego/scheduler/server/proto"
 
+	"github.com/pipego/scheduler/common"
 	"github.com/pipego/scheduler/config"
-	"github.com/pipego/scheduler/plugin"
 	"github.com/pipego/scheduler/scheduler"
 )
 
@@ -27,12 +27,13 @@ type Server interface {
 type Config struct {
 	Address   string
 	Config    config.Config
-	Plugin    plugin.Plugin
 	Scheduler scheduler.Scheduler
 }
 
 type server struct {
-	cfg *Config
+	cfg   *Config
+	nodes []*common.Node
+	task  *common.Task
 }
 
 type rpcServer struct {
@@ -50,10 +51,6 @@ func DefaultConfig() *Config {
 }
 
 func (s *server) Init() error {
-	if err := s.cfg.Plugin.Init(); err != nil {
-		return errors.Wrap(err, "failed to init plugin")
-	}
-
 	if err := s.cfg.Scheduler.Init(); err != nil {
 		return errors.Wrap(err, "failed to init scheduler")
 	}
@@ -77,10 +74,58 @@ func (s *server) SendServer(in *pb.ServerRequest) (*pb.ServerReply, error) {
 		return &pb.ServerReply{Error: "invalid kind"}, nil
 	}
 
-	res := s.cfg.Scheduler.Run(in.GetSpec().GetTask(), in.GetSpec().GetNodes())
+	if err := s.sendHelper(in.GetSpec().GetTask(), in.GetSpec().GetNodes()); err != nil {
+		return &pb.ServerReply{Error: "invalid spec"}, nil
+	}
+
+	res := s.cfg.Scheduler.Run(s.task, s.nodes)
 
 	return &pb.ServerReply{
 		Name:  res.Name,
 		Error: res.Error,
 	}, nil
+}
+
+func (s *server) sendHelper(task *pb.Task, nodes []*pb.Node) error {
+	taskHelper := func(t *pb.Task) common.Resource {
+		return common.Resource{
+			MilliCPU: t.GetRequestedResource().MilliCPU,
+			Memory:   t.GetRequestedResource().Memory,
+			Storage:  t.GetRequestedResource().Storage,
+		}
+	}
+
+	nodeHelper := func(n *pb.Node) common.Node {
+		return common.Node{
+			AllocatableResource: common.Resource{
+				MilliCPU: n.GetAllocatableResource().MilliCPU,
+				Memory:   n.GetAllocatableResource().Memory,
+				Storage:  n.GetAllocatableResource().Storage,
+			},
+			Host:  n.GetHost(),
+			Label: n.GetLabel(),
+			Name:  n.GetName(),
+			RequestedResource: common.Resource{
+				MilliCPU: n.GetRequestedResource().MilliCPU,
+				Memory:   n.GetRequestedResource().Memory,
+				Storage:  n.GetRequestedResource().Storage,
+			},
+			Unschedulable: n.GetUnschedulable(),
+		}
+	}
+
+	s.task = &common.Task{
+		Name:                   task.GetName(),
+		NodeName:               task.GetNodeName(),
+		NodeSelector:           task.GetNodeSelector(),
+		RequestedResource:      taskHelper(task),
+		ToleratesUnschedulable: task.GetToleratesUnschedulable(),
+	}
+
+	for _, item := range nodes {
+		node := nodeHelper(item)
+		s.nodes = append(s.nodes, &node)
+	}
+
+	return nil
 }

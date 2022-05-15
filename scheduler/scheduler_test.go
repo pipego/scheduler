@@ -4,6 +4,18 @@ import (
 	"testing"
 )
 
-func TestScheduler(t *testing.T) {
-	// TODO: add test case
+func TestRunFetchPlugins(t *testing.T) {
+	// TODO: Add implementation
+}
+
+func TestRunFilterPlugins(t *testing.T) {
+	// TODO: Add implementation
+}
+
+func TestRunScorePlugins(t *testing.T) {
+	// TODO: Add implementation
+}
+
+func TestSelectHost(t *testing.T) {
+	// TODO: Add implementation
 }
