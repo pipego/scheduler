@@ -94,7 +94,7 @@ func (p *plugin) Init() error {
 	}
 
 	buf, err = initPlugin(&p.cfg.Config.Spec.Filter, &Filter{})
-	if err != nil {
+	if err != nil || len(buf) == 0 {
 		return errors.Wrap(err, "failed to init filter")
 	}
 
@@ -104,7 +104,7 @@ func (p *plugin) Init() error {
 	}
 
 	buf, err = initPlugin(&p.cfg.Config.Spec.Score, &Score{})
-	if err != nil {
+	if err != nil || len(buf) == 0 {
 		return errors.Wrap(err, "failed to init score")
 	}
 

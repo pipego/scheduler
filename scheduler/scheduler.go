@@ -144,7 +144,7 @@ func (s *scheduler) runFilterPlugins(task *common.Task, nodes []*common.Node) ([
 
 	pl := s.cfg.Config.Spec.Filter.Enabled
 	sort.Slice(pl, func(i, j int) bool {
-		return pl[i].Priority > pl[j].Priority
+		return pl[i].Priority < pl[j].Priority
 	})
 
 	// TODO: Set in parallel

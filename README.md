@@ -77,16 +77,16 @@ spec:
     enabled:
       - name: NodeName
         path: ./plugin/filter-nodename
-        priority: 4
+        priority: 1
       - name: NodeAffinity
         path: ./plugin/filter-nodeaffinity
-        priority: 3
+        priority: 2
       - name: NodeResourcesFit
         path: ./plugin/filter-noderesourcesfit
-        priority: 2
+        priority: 3
       - name: NodeUnschedulable
         path: ./plugin/filter-nodeunschedulable
-        priority: 1
+        priority: 4
   score:
     enabled:
       - name: NodeResourcesFit
