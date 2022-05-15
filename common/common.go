@@ -50,7 +50,7 @@ type Args struct {
 type Node struct {
 	AllocatableResource Resource `json:"allocatableResource"`
 	Host                string   `json:"host"`
-	Label               Label    `json:"label"`
+	Label               string   `json:"label"`
 	Name                string   `json:"name"`
 	RequestedResource   Resource `json:"requestedResource"`
 	Unschedulable       bool     `json:"unschedulable"`
@@ -59,17 +59,13 @@ type Node struct {
 type Task struct {
 	Name                   string   `json:"name"`
 	NodeName               string   `json:"nodeName"`
-	NodeSelector           Selector `json:"nodeSelector"`
+	NodeSelector           []string `json:"nodeSelector"`
 	RequestedResource      Resource `json:"requestedResource"`
 	ToleratesUnschedulable bool     `json:"toleratesUnschedulable"`
 }
-
-type Label map[string]string
 
 type Resource struct {
 	MilliCPU int64 `json:"milliCPU"`
 	Memory   int64 `json:"memory"`
 	Storage  int64 `json:"storage"`
 }
-
-type Selector map[string][]string

@@ -29,7 +29,7 @@ message Spec {
 message Task {
   string name = 1;
   string nodeName = 2;
-  NodeSelector nodeSelector = 3;
+  repeated string nodeSelector = 3;
   RequestedResource requestedResource = 4;
   bool toleratesUnschedulable = 5;
 }
@@ -37,7 +37,7 @@ message Task {
 message Node {
   string name = 1;
   string host = 2;
-  NodeLabel label = 3;
+  string label = 3;
   AllocatableResource allocatableResource = 4;
   RequestedResource requestedResource = 5;
   bool unschedulable = 6;
@@ -53,22 +53,10 @@ message Label {
   string name = 1;
 }
 
-message NodeLabel {
-  Label label = 1;
-}
-
-message NodeSelector {
-  Selector selector = 1;
-}
-
 message RequestedResource {
   int64 milliCPU = 1;
   int64 memory = 2;
   int64 storage = 3;
-}
-
-message Selector {
-  repeated string name = 1;
 }
 
 // The response message.
