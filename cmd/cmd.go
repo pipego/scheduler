@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"io"
-	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/pkg/errors"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -40,18 +42,16 @@ func Run() error {
 		return errors.Wrap(err, "failed to init scheduler")
 	}
 
+	_ = registerNotify(sched)
+
 	srv, err := initServer(cfg, sched)
 	if err != nil {
 		return errors.Wrap(err, "failed to init server")
 	}
 
-	log.Println("running")
-
 	if err := runPipe(srv); err != nil {
 		return errors.Wrap(err, "failed to run pipe")
 	}
-
-	log.Println("exiting")
 
 	return nil
 }
@@ -98,6 +98,24 @@ func initScheduler(cfg *config.Config, pl plugin.Plugin) (scheduler.Scheduler, e
 	c.Plugin = pl
 
 	return scheduler.New(context.Background(), c), nil
+}
+
+func registerNotify(sched scheduler.Scheduler) error {
+	s := make(chan os.Signal, 1)
+
+	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
+	done := make(chan bool, 1)
+
+	go func() {
+		sig := <-s
+		fmt.Println(sig)
+		_ = sched.Deinit()
+		done <- true
+	}()
+
+	<-done
+
+	return nil
 }
 
 func initServer(cfg *config.Config, sched scheduler.Scheduler) (server.Server, error) {

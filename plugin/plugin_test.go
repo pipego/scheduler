@@ -11,10 +11,13 @@ import (
 
 func TestInitPlugin(t *testing.T) {
 	cfg := config.Plugin{}
+	pl := plugin{}
 
-	buf, err := initPlugin(&cfg, &Fetch{})
+	c, p, err := pl.initPlugin(&cfg, &Fetch{})
 	assert.Equal(t, nil, err)
-	assert.Equal(t, 0, len(buf))
+	assert.Equal(t, 0, len(c))
+	assert.Equal(t, 0, len(p))
+	_ = pl.deinitHelper(c)
 
 	cfg.Disabled = []config.Disabled{
 		{
@@ -24,8 +27,11 @@ func TestInitPlugin(t *testing.T) {
 
 	cfg.Enabled = []config.Enabled{}
 
-	_, err = initPlugin(&cfg, &Fetch{})
+	c, p, err = pl.initPlugin(&cfg, &Fetch{})
 	assert.NotEqual(t, nil, err)
+	assert.Equal(t, 0, len(c))
+	assert.Equal(t, 0, len(p))
+	_ = pl.deinitHelper(c)
 
 	cfg.Disabled = []config.Disabled{}
 
@@ -40,8 +46,11 @@ func TestInitPlugin(t *testing.T) {
 		},
 	}
 
-	_, err = initPlugin(&cfg, &Fetch{})
+	c, p, err = pl.initPlugin(&cfg, &Fetch{})
 	assert.NotEqual(t, nil, err)
+	assert.NotEqual(t, 0, len(c))
+	assert.NotEqual(t, 0, len(p))
+	_ = pl.deinitHelper(c)
 
 	cfg.Disabled = []config.Disabled{
 		{
@@ -57,8 +66,11 @@ func TestInitPlugin(t *testing.T) {
 		},
 	}
 
-	_, err = initPlugin(&cfg, &Fetch{})
+	c, p, err = pl.initPlugin(&cfg, &Fetch{})
 	assert.NotEqual(t, nil, err)
+	assert.NotEqual(t, 0, len(c))
+	assert.NotEqual(t, 0, len(p))
+	_ = pl.deinitHelper(c)
 
 	cfg.Disabled = []config.Disabled{}
 
@@ -69,13 +81,45 @@ func TestInitPlugin(t *testing.T) {
 		},
 	}
 
-	buf, err = initPlugin(&cfg, &Fetch{})
+	c, p, err = pl.initPlugin(&cfg, &Fetch{})
 	assert.Equal(t, nil, err)
-	assert.NotEqual(t, 0, len(buf))
+	assert.NotEqual(t, 0, len(c))
+	assert.NotEqual(t, 0, len(p))
+	_ = pl.deinitHelper(c)
+}
+
+func TestInitInstance(t *testing.T) {
+	pl := plugin{}
+
+	name := ""
+	_path := ""
+
+	_, _, err := pl.initInstance(name, _path, &Fetch{})
+	assert.NotEqual(t, nil, err)
+
+	name = "name1"
+	_path = ""
+
+	_, _, err = pl.initInstance(name, _path, &Fetch{})
+	assert.NotEqual(t, nil, err)
+
+	name = ""
+	_path = "path1"
+
+	_, _, err = pl.initInstance(name, _path, &Fetch{})
+	assert.NotEqual(t, nil, err)
+
+	name = "LocalHost"
+	_path = "./fetch-localhost"
+
+	c, _, err := pl.initInstance(name, _path, &Fetch{})
+	assert.Equal(t, nil, err)
+	c.Kill()
 }
 
 func TestRunFetch(t *testing.T) {
 	cfg := config.Plugin{}
+	pl := plugin{}
 
 	cfg.Disabled = []config.Disabled{}
 
@@ -86,12 +130,10 @@ func TestRunFetch(t *testing.T) {
 		},
 	}
 
-	buf, _ := initPlugin(&cfg, &Fetch{})
-
-	pl := plugin{}
+	c, p, _ := pl.initPlugin(&cfg, &Fetch{})
 
 	pl.fetch = map[string]FetchImpl{}
-	for k, v := range buf {
+	for k, v := range p {
 		pl.fetch[k] = v.(*FetchRPC)
 	}
 
@@ -100,10 +142,13 @@ func TestRunFetch(t *testing.T) {
 
 	_, err = pl.RunFetch("LocalHost", "127.0.0.1")
 	assert.Equal(t, nil, err)
+
+	_ = pl.deinitHelper(c)
 }
 
 func TestRunFilter(t *testing.T) {
 	cfg := config.Plugin{}
+	pl := plugin{}
 
 	cfg.Disabled = []config.Disabled{}
 
@@ -114,12 +159,10 @@ func TestRunFilter(t *testing.T) {
 		},
 	}
 
-	buf, _ := initPlugin(&cfg, &Filter{})
-
-	pl := plugin{}
+	c, p, _ := pl.initPlugin(&cfg, &Filter{})
 
 	pl.filter = map[string]FilterImpl{}
-	for k, v := range buf {
+	for k, v := range p {
 		pl.filter[k] = v.(*FilterRPC)
 	}
 
@@ -131,10 +174,13 @@ func TestRunFilter(t *testing.T) {
 
 	_, err = pl.RunFilter("NodeName", &task, &node)
 	assert.Equal(t, nil, err)
+
+	_ = pl.deinitHelper(c)
 }
 
 func TestRunScore(t *testing.T) {
 	cfg := config.Plugin{}
+	pl := plugin{}
 
 	cfg.Disabled = []config.Disabled{}
 
@@ -145,12 +191,10 @@ func TestRunScore(t *testing.T) {
 		},
 	}
 
-	buf, _ := initPlugin(&cfg, &Score{})
-
-	pl := plugin{}
+	c, p, _ := pl.initPlugin(&cfg, &Score{})
 
 	pl.score = map[string]ScoreImpl{}
-	for k, v := range buf {
+	for k, v := range p {
 		pl.score[k] = v.(*ScoreRPC)
 	}
 
@@ -162,4 +206,6 @@ func TestRunScore(t *testing.T) {
 
 	_, err = pl.RunScore("NodeResourcesFit", &task, &node)
 	assert.Equal(t, nil, err)
+
+	_ = pl.deinitHelper(c)
 }

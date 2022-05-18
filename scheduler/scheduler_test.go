@@ -47,6 +47,7 @@ func TestRunFetchPlugins(t *testing.T) {
 	_ = s.Init()
 	_, err := s.runFetchPlugins(nodes)
 	assert.Equal(t, nil, err)
+	_ = s.Deinit()
 
 	cfg.Spec.Fetch.Enabled = []config.Enabled{
 		{
@@ -69,6 +70,7 @@ func TestRunFetchPlugins(t *testing.T) {
 	_ = s.Init()
 	_, err = s.runFetchPlugins(nodes)
 	assert.NotEqual(t, nil, err)
+	_ = s.Deinit()
 
 	cfg.Spec.Fetch.Enabled = []config.Enabled{
 		{
@@ -89,6 +91,7 @@ func TestRunFetchPlugins(t *testing.T) {
 	buf, err := s.runFetchPlugins(nodes)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, int64(100), buf[0].AllocatableResource.MilliCPU)
+	_ = s.Deinit()
 }
 
 func TestRunFilterPlugins(t *testing.T) {
@@ -105,6 +108,7 @@ func TestRunFilterPlugins(t *testing.T) {
 	_ = s.Init()
 	_, err := s.runFilterPlugins(&task, nodes)
 	assert.Equal(t, nil, err)
+	_ = s.Deinit()
 
 	cfg.Spec.Filter.Enabled = []config.Enabled{
 		{
@@ -131,6 +135,7 @@ func TestRunFilterPlugins(t *testing.T) {
 	buf, err := s.runFilterPlugins(&task, nodes)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 1, len(buf))
+	_ = s.Deinit()
 }
 
 func TestRunScorePlugins(t *testing.T) {
@@ -147,6 +152,7 @@ func TestRunScorePlugins(t *testing.T) {
 	_ = s.Init()
 	_, err := s.runScorePlugins(&task, nodes)
 	assert.NotEqual(t, nil, err)
+	_ = s.Deinit()
 
 	cfg.Spec.Score.Enabled = []config.Enabled{
 		{
@@ -173,6 +179,7 @@ func TestRunScorePlugins(t *testing.T) {
 	buf, err := s.runScorePlugins(&task, nodes)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 2, len(buf))
+	_ = s.Deinit()
 }
 
 func TestSelectHost(t *testing.T) {

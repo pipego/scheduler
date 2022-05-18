@@ -14,6 +14,7 @@ import (
 
 type Scheduler interface {
 	Init() error
+	Deinit() error
 	Run(*common.Task, []*common.Node) Result
 }
 
@@ -52,6 +53,10 @@ func (s *scheduler) Init() error {
 	}
 
 	return nil
+}
+
+func (s *scheduler) Deinit() error {
+	return s.cfg.Plugin.Deinit()
 }
 
 func (s *scheduler) Run(task *common.Task, nodes []*common.Node) Result {
