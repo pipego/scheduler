@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/pipego/scheduler/config"
+	"github.com/pipego/scheduler/parallelizer"
 	"github.com/pipego/scheduler/plugin"
 	"github.com/pipego/scheduler/scheduler"
 	"github.com/pipego/scheduler/server"
@@ -32,12 +33,17 @@ func Run(ctx context.Context) error {
 		return errors.Wrap(err, "failed to init config")
 	}
 
+	pa, err := initParallelizer(ctx, cfg)
+	if err != nil {
+		return errors.Wrap(err, "failed to init parallelizer")
+	}
+
 	pl, err := initPlugin(ctx, cfg)
 	if err != nil {
 		return errors.Wrap(err, "failed to init plugin")
 	}
 
-	sched, err := initScheduler(ctx, cfg, pl)
+	sched, err := initScheduler(ctx, cfg, pa, pl)
 	if err != nil {
 		return errors.Wrap(err, "failed to init scheduler")
 	}
@@ -77,6 +83,17 @@ func initConfig(_ context.Context, name string) (*config.Config, error) {
 	return c, nil
 }
 
+func initParallelizer(ctx context.Context, cfg *config.Config) (parallelizer.Parallelizer, error) {
+	c := parallelizer.DefaultConfig()
+	if c == nil {
+		return nil, errors.New("failed to config")
+	}
+
+	c.Config = *cfg
+
+	return parallelizer.New(ctx, c), nil
+}
+
 func initPlugin(ctx context.Context, cfg *config.Config) (plugin.Plugin, error) {
 	c := plugin.DefaultConfig()
 	if c == nil {
@@ -88,13 +105,14 @@ func initPlugin(ctx context.Context, cfg *config.Config) (plugin.Plugin, error) 
 	return plugin.New(ctx, c), nil
 }
 
-func initScheduler(ctx context.Context, cfg *config.Config, pl plugin.Plugin) (scheduler.Scheduler, error) {
+func initScheduler(ctx context.Context, cfg *config.Config, pa parallelizer.Parallelizer, pl plugin.Plugin) (scheduler.Scheduler, error) {
 	c := scheduler.DefaultConfig()
 	if c == nil {
 		return nil, errors.New("failed to config")
 	}
 
 	c.Config = *cfg
+	c.Parallelizer = pa
 	c.Plugin = pl
 
 	return scheduler.New(ctx, c), nil

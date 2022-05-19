@@ -4,11 +4,13 @@ import (
 	"context"
 	"math/rand"
 	"sort"
+	"sync"
 
 	"github.com/pkg/errors"
 
 	"github.com/pipego/scheduler/common"
 	"github.com/pipego/scheduler/config"
+	"github.com/pipego/scheduler/parallelizer"
 	"github.com/pipego/scheduler/plugin"
 )
 
@@ -19,8 +21,9 @@ type Scheduler interface {
 }
 
 type Config struct {
-	Config config.Config
-	Plugin plugin.Plugin
+	Config       config.Config
+	Parallelizer parallelizer.Parallelizer
+	Plugin       plugin.Plugin
 }
 
 type Result struct {
@@ -48,6 +51,10 @@ func DefaultConfig() *Config {
 }
 
 func (s *scheduler) Init(ctx context.Context) error {
+	if err := s.cfg.Parallelizer.Init(ctx, parallelizer.DefaultParallelism); err != nil {
+		return errors.Wrap(err, "failed to init parallelizer")
+	}
+
 	if err := s.cfg.Plugin.Init(ctx); err != nil {
 		return errors.Wrap(err, "failed to init plugin")
 	}
@@ -118,12 +125,11 @@ func (s *scheduler) runFetchPlugins(ctx context.Context, nodes []*common.Node) (
 
 	pl := s.cfg.Config.Spec.Fetch.Enabled[0]
 
-	// TODO: Set in parallel
-	for i := range nodes {
-		if res, err := s.cfg.Plugin.RunFetch(ctx, pl.Name, nodes[i].Host); err == nil {
-			nodes[i] = helper(nodes[i], res)
+	parallelizer.ParallelizeUntil(ctx, parallelizer.DefaultParallelism, len(nodes), func(index int) {
+		if res, err := s.cfg.Plugin.RunFetch(ctx, pl.Name, nodes[index].Host); err == nil {
+			nodes[index] = helper(nodes[index], res)
 		}
-	}
+	})
 
 	return nodes, nil
 }
@@ -152,7 +158,6 @@ func (s *scheduler) runFilterPlugins(ctx context.Context, task *common.Task, nod
 		return pl[i].Priority < pl[j].Priority
 	})
 
-	// TODO: Set in parallel
 	for _, item := range pl {
 		buf = helper(item.Name, task, nodes)
 		if len(buf) != 0 {
@@ -186,14 +191,16 @@ func (s *scheduler) runScorePlugins(ctx context.Context, task *common.Task, node
 	}
 
 	pl := s.cfg.Config.Spec.Score.Enabled
+	m := sync.Mutex{}
 
-	// TODO: Set in parallel
-	for _, item := range pl {
-		b := helper(item, task, nodes)
+	parallelizer.ParallelizeUntil(ctx, parallelizer.DefaultParallelism, len(pl), func(index int) {
+		m.Lock()
+		defer m.Unlock()
+		b := helper(pl[index], task, nodes)
 		if len(b) != 0 {
 			buf = append(buf, b...)
 		}
-	}
+	})
 
 	return buf, nil
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/pipego/scheduler/common"
 	"github.com/pipego/scheduler/config"
+	"github.com/pipego/scheduler/parallelizer"
 	"github.com/pipego/scheduler/plugin"
 )
 
@@ -27,6 +28,13 @@ var (
 	}
 )
 
+func initParallelizer(cfg *config.Config) parallelizer.Parallelizer {
+	c := parallelizer.DefaultConfig()
+	c.Config = *cfg
+
+	return parallelizer.New(context.Background(), c)
+}
+
 func initPlugin(cfg *config.Config) plugin.Plugin {
 	c := plugin.DefaultConfig()
 	c.Config = *cfg
@@ -40,8 +48,9 @@ func TestRunFetchPlugins(t *testing.T) {
 
 	s := scheduler{
 		cfg: &Config{
-			Config: cfg,
-			Plugin: initPlugin(&cfg),
+			Config:       cfg,
+			Parallelizer: initParallelizer(&cfg),
+			Plugin:       initPlugin(&cfg),
 		},
 	}
 
@@ -63,8 +72,9 @@ func TestRunFetchPlugins(t *testing.T) {
 
 	s = scheduler{
 		cfg: &Config{
-			Config: cfg,
-			Plugin: initPlugin(&cfg),
+			Config:       cfg,
+			Parallelizer: initParallelizer(&cfg),
+			Plugin:       initPlugin(&cfg),
 		},
 	}
 
@@ -82,8 +92,9 @@ func TestRunFetchPlugins(t *testing.T) {
 
 	s = scheduler{
 		cfg: &Config{
-			Config: cfg,
-			Plugin: initPlugin(&cfg),
+			Config:       cfg,
+			Parallelizer: initParallelizer(&cfg),
+			Plugin:       initPlugin(&cfg),
 		},
 	}
 
@@ -102,8 +113,9 @@ func TestRunFilterPlugins(t *testing.T) {
 
 	s := scheduler{
 		cfg: &Config{
-			Config: cfg,
-			Plugin: initPlugin(&cfg),
+			Config:       cfg,
+			Parallelizer: initParallelizer(&cfg),
+			Plugin:       initPlugin(&cfg),
 		},
 	}
 
@@ -127,8 +139,9 @@ func TestRunFilterPlugins(t *testing.T) {
 
 	s = scheduler{
 		cfg: &Config{
-			Config: cfg,
-			Plugin: initPlugin(&cfg),
+			Config:       cfg,
+			Parallelizer: initParallelizer(&cfg),
+			Plugin:       initPlugin(&cfg),
 		},
 	}
 
@@ -147,8 +160,9 @@ func TestRunScorePlugins(t *testing.T) {
 
 	s := scheduler{
 		cfg: &Config{
-			Config: cfg,
-			Plugin: initPlugin(&cfg),
+			Config:       cfg,
+			Parallelizer: initParallelizer(&cfg),
+			Plugin:       initPlugin(&cfg),
 		},
 	}
 
@@ -172,8 +186,9 @@ func TestRunScorePlugins(t *testing.T) {
 
 	s = scheduler{
 		cfg: &Config{
-			Config: cfg,
-			Plugin: initPlugin(&cfg),
+			Config:       cfg,
+			Parallelizer: initParallelizer(&cfg),
+			Plugin:       initPlugin(&cfg),
 		},
 	}
 
