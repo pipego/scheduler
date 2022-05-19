@@ -13,7 +13,7 @@ const (
 )
 
 type Parallelizer interface {
-	Init(p int) error
+	Init(context.Context, int) error
 }
 
 type Config struct {
@@ -36,7 +36,7 @@ func DefaultConfig() *Config {
 	return &Config{}
 }
 
-func (p *parallelizer) Init(parallelism int) error {
+func (p *parallelizer) Init(ctx context.Context, parallelism int) error {
 	p.parallelism = parallelism
 	return nil
 }

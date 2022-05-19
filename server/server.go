@@ -20,8 +20,8 @@ const (
 )
 
 type Server interface {
-	Init() error
-	Run() error
+	Init(context.Context) error
+	Run(context.Context) error
 }
 
 type Config struct {
@@ -32,6 +32,7 @@ type Config struct {
 
 type server struct {
 	cfg   *Config
+	ctx   context.Context
 	nodes []*common.Node
 	task  *common.Task
 }
@@ -50,15 +51,17 @@ func DefaultConfig() *Config {
 	return &Config{}
 }
 
-func (s *server) Init() error {
-	if err := s.cfg.Scheduler.Init(); err != nil {
+func (s *server) Init(ctx context.Context) error {
+	if err := s.cfg.Scheduler.Init(ctx); err != nil {
 		return errors.Wrap(err, "failed to init scheduler")
 	}
 
 	return nil
 }
 
-func (s *server) Run() error {
+func (s *server) Run(ctx context.Context) error {
+	s.ctx = ctx
+
 	options := []grpc.ServerOption{grpc.MaxRecvMsgSize(math.MaxInt32), grpc.MaxSendMsgSize(math.MaxInt32)}
 
 	g := grpc.NewServer(options...)
@@ -74,11 +77,11 @@ func (s *server) SendServer(in *pb.ServerRequest) (*pb.ServerReply, error) {
 		return &pb.ServerReply{Error: "invalid kind"}, nil
 	}
 
-	if err := s.sendHelper(in.GetSpec().GetTask(), in.GetSpec().GetNodes()); err != nil {
+	if err := s.sendHelper(s.ctx, in.GetSpec().GetTask(), in.GetSpec().GetNodes()); err != nil {
 		return &pb.ServerReply{Error: "invalid spec"}, nil
 	}
 
-	res := s.cfg.Scheduler.Run(s.task, s.nodes)
+	res := s.cfg.Scheduler.Run(s.ctx, s.task, s.nodes)
 
 	return &pb.ServerReply{
 		Name:  res.Name,
@@ -86,7 +89,7 @@ func (s *server) SendServer(in *pb.ServerRequest) (*pb.ServerReply, error) {
 	}, nil
 }
 
-func (s *server) sendHelper(task *pb.Task, nodes []*pb.Node) error {
+func (s *server) sendHelper(_ context.Context, task *pb.Task, nodes []*pb.Node) error {
 	taskHelper := func(t *pb.Task) common.Resource {
 		return common.Resource{
 			MilliCPU: t.GetRequestedResource().MilliCPU,

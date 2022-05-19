@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-type DoWorkPieceFunc func(piece int)
+type DoWorkPieceFunc func(int)
 type Options func(*options)
 
 type options struct {

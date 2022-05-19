@@ -13,9 +13,9 @@ import (
 )
 
 type Scheduler interface {
-	Init() error
-	Deinit() error
-	Run(*common.Task, []*common.Node) Result
+	Init(context.Context) error
+	Deinit(context.Context) error
+	Run(context.Context, *common.Task, []*common.Node) Result
 }
 
 type Config struct {
@@ -47,41 +47,41 @@ func DefaultConfig() *Config {
 	return &Config{}
 }
 
-func (s *scheduler) Init() error {
-	if err := s.cfg.Plugin.Init(); err != nil {
+func (s *scheduler) Init(ctx context.Context) error {
+	if err := s.cfg.Plugin.Init(ctx); err != nil {
 		return errors.Wrap(err, "failed to init plugin")
 	}
 
 	return nil
 }
 
-func (s *scheduler) Deinit() error {
-	return s.cfg.Plugin.Deinit()
+func (s *scheduler) Deinit(ctx context.Context) error {
+	return s.cfg.Plugin.Deinit(ctx)
 }
 
-func (s *scheduler) Run(task *common.Task, nodes []*common.Node) Result {
+func (s *scheduler) Run(ctx context.Context, task *common.Task, nodes []*common.Node) Result {
 	var scores []nodeScore
 
 	if len(nodes) == 0 {
 		return Result{Error: "invalid nodes"}
 	}
 
-	nodes, err := s.runFetchPlugins(nodes)
+	nodes, err := s.runFetchPlugins(ctx, nodes)
 	if err != nil {
 		return Result{Error: "failed to fetch"}
 	}
 
-	nodes, err = s.runFilterPlugins(task, nodes)
+	nodes, err = s.runFilterPlugins(ctx, task, nodes)
 	if err != nil {
 		return Result{Error: "failed to filter"}
 	}
 
-	scores, err = s.runScorePlugins(task, nodes)
+	scores, err = s.runScorePlugins(ctx, task, nodes)
 	if err != nil {
 		return Result{Error: "failed to score"}
 	}
 
-	host, err := s.selectHost(scores)
+	host, err := s.selectHost(ctx, scores)
 	if err != nil {
 		return Result{Error: "failed to select"}
 	}
@@ -89,7 +89,7 @@ func (s *scheduler) Run(task *common.Task, nodes []*common.Node) Result {
 	return Result{Name: host}
 }
 
-func (s *scheduler) runFetchPlugins(nodes []*common.Node) ([]*common.Node, error) {
+func (s *scheduler) runFetchPlugins(ctx context.Context, nodes []*common.Node) ([]*common.Node, error) {
 	helper := func(node *common.Node, res plugin.FetchResult) *common.Node {
 		if res.AllocatableResource.MilliCPU < 0 ||
 			res.AllocatableResource.Memory < 0 ||
@@ -120,7 +120,7 @@ func (s *scheduler) runFetchPlugins(nodes []*common.Node) ([]*common.Node, error
 
 	// TODO: Set in parallel
 	for i := range nodes {
-		if res, err := s.cfg.Plugin.RunFetch(pl.Name, nodes[i].Host); err == nil {
+		if res, err := s.cfg.Plugin.RunFetch(ctx, pl.Name, nodes[i].Host); err == nil {
 			nodes[i] = helper(nodes[i], res)
 		}
 	}
@@ -128,13 +128,13 @@ func (s *scheduler) runFetchPlugins(nodes []*common.Node) ([]*common.Node, error
 	return nodes, nil
 }
 
-func (s *scheduler) runFilterPlugins(task *common.Task, nodes []*common.Node) ([]*common.Node, error) {
+func (s *scheduler) runFilterPlugins(ctx context.Context, task *common.Task, nodes []*common.Node) ([]*common.Node, error) {
 	var buf []*common.Node
 
-	filterHelper := func(p string, t *common.Task, n []*common.Node) []*common.Node {
+	helper := func(p string, t *common.Task, n []*common.Node) []*common.Node {
 		var b []*common.Node
 		for i := range n {
-			if res, err := s.cfg.Plugin.RunFilter(p, t, n[i]); err == nil {
+			if res, err := s.cfg.Plugin.RunFilter(ctx, p, t, n[i]); err == nil {
 				if res.Error == "" {
 					b = append(b, n[i])
 				}
@@ -154,7 +154,7 @@ func (s *scheduler) runFilterPlugins(task *common.Task, nodes []*common.Node) ([
 
 	// TODO: Set in parallel
 	for _, item := range pl {
-		buf = filterHelper(item.Name, task, nodes)
+		buf = helper(item.Name, task, nodes)
 		if len(buf) != 0 {
 			break
 		}
@@ -163,13 +163,13 @@ func (s *scheduler) runFilterPlugins(task *common.Task, nodes []*common.Node) ([
 	return buf, nil
 }
 
-func (s *scheduler) runScorePlugins(task *common.Task, nodes []*common.Node) ([]nodeScore, error) {
+func (s *scheduler) runScorePlugins(ctx context.Context, task *common.Task, nodes []*common.Node) ([]nodeScore, error) {
 	var buf []nodeScore
 
-	scoreHelper := func(c config.Enabled, t *common.Task, n []*common.Node) []nodeScore {
+	helper := func(c config.Enabled, t *common.Task, n []*common.Node) []nodeScore {
 		var b []nodeScore
 		for i := range n {
-			if res, err := s.cfg.Plugin.RunScore(c.Name, t, n[i]); err == nil {
+			if res, err := s.cfg.Plugin.RunScore(ctx, c.Name, t, n[i]); err == nil {
 				if res.Score >= common.MinNodeScore && res.Score <= common.MaxNodeScore {
 					b = append(b, nodeScore{
 						name:  n[i].Name,
@@ -189,7 +189,7 @@ func (s *scheduler) runScorePlugins(task *common.Task, nodes []*common.Node) ([]
 
 	// TODO: Set in parallel
 	for _, item := range pl {
-		b := scoreHelper(item, task, nodes)
+		b := helper(item, task, nodes)
 		if len(b) != 0 {
 			buf = append(buf, b...)
 		}
@@ -199,7 +199,7 @@ func (s *scheduler) runScorePlugins(task *common.Task, nodes []*common.Node) ([]
 }
 
 // nolint: gosec
-func (s *scheduler) selectHost(scores []nodeScore) (string, error) {
+func (s *scheduler) selectHost(_ context.Context, scores []nodeScore) (string, error) {
 	if len(scores) == 0 {
 		return "", errors.New("invalid scores")
 	}

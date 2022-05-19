@@ -14,11 +14,11 @@ import (
 )
 
 type Plugin interface {
-	Init() error
-	Deinit() error
-	RunFetch(string, string) (FetchResult, error)
-	RunFilter(string, *common.Task, *common.Node) (FilterResult, error)
-	RunScore(string, *common.Task, *common.Node) (ScoreResult, error)
+	Init(context.Context) error
+	Deinit(context.Context) error
+	RunFetch(context.Context, string, string) (FetchResult, error)
+	RunFilter(context.Context, string, *common.Task, *common.Node) (FilterResult, error)
+	RunScore(context.Context, string, *common.Task, *common.Node) (ScoreResult, error)
 }
 
 type FetchImpl interface {
@@ -26,11 +26,11 @@ type FetchImpl interface {
 }
 
 type FilterImpl interface {
-	Run(args *common.Args) FilterResult
+	Run(*common.Args) FilterResult
 }
 
 type ScoreImpl interface {
-	Run(args *common.Args) ScoreResult
+	Run(*common.Args) ScoreResult
 }
 
 type Config struct {
@@ -82,12 +82,12 @@ func DefaultConfig() *Config {
 	return &Config{}
 }
 
-func (p *plugin) Init() error {
+func (p *plugin) Init(ctx context.Context) error {
 	var err error
 
-	cli, pl, err := p.initPlugin(&p.cfg.Config.Spec.Fetch, &Fetch{})
+	cli, pl, err := p.initPlugin(ctx, &p.cfg.Config.Spec.Fetch, &Fetch{})
 	if err != nil {
-		_ = p.deinitHelper(cli)
+		_ = p.deinitHelper(ctx, cli)
 		return errors.Wrap(err, "failed to init fetch")
 	}
 
@@ -98,9 +98,9 @@ func (p *plugin) Init() error {
 		p.fetch[k] = v.(FetchImpl)
 	}
 
-	cli, pl, err = p.initPlugin(&p.cfg.Config.Spec.Filter, &Filter{})
+	cli, pl, err = p.initPlugin(ctx, &p.cfg.Config.Spec.Filter, &Filter{})
 	if err != nil || len(pl) == 0 {
-		_ = p.deinitHelper(cli)
+		_ = p.deinitHelper(ctx, cli)
 		return errors.Wrap(err, "failed to init filter")
 	}
 
@@ -111,9 +111,9 @@ func (p *plugin) Init() error {
 		p.filter[k] = v.(FilterImpl)
 	}
 
-	cli, pl, err = p.initPlugin(&p.cfg.Config.Spec.Score, &Score{})
+	cli, pl, err = p.initPlugin(ctx, &p.cfg.Config.Spec.Score, &Score{})
 	if err != nil || len(pl) == 0 {
-		_ = p.deinitHelper(cli)
+		_ = p.deinitHelper(ctx, cli)
 		return errors.Wrap(err, "failed to init score")
 	}
 
@@ -127,7 +127,7 @@ func (p *plugin) Init() error {
 	return nil
 }
 
-func (p *plugin) initPlugin(cfg *config.Plugin, impl gop.Plugin) ([]*gop.Client, map[string]interface{}, error) {
+func (p *plugin) initPlugin(ctx context.Context, cfg *config.Plugin, impl gop.Plugin) ([]*gop.Client, map[string]interface{}, error) {
 	var cli []*gop.Client
 	pl := make(map[string]interface{})
 
@@ -135,7 +135,7 @@ func (p *plugin) initPlugin(cfg *config.Plugin, impl gop.Plugin) ([]*gop.Client,
 		if _, ok := pl[name]; ok {
 			return errors.New("duplicate name")
 		}
-		c, i, err := p.initInstance(name, _path, impl)
+		c, i, err := p.initInstance(ctx, name, _path, impl)
 		if err != nil {
 			return errors.New("failed to init instance")
 		}
@@ -159,7 +159,7 @@ func (p *plugin) initPlugin(cfg *config.Plugin, impl gop.Plugin) ([]*gop.Client,
 	return cli, pl, nil
 }
 
-func (p *plugin) initInstance(name, _path string, impl gop.Plugin) (*gop.Client, interface{}, error) {
+func (p *plugin) initInstance(ctx context.Context, name, _path string, impl gop.Plugin) (*gop.Client, interface{}, error) {
 	plugins := map[string]gop.Plugin{
 		name: impl,
 	}
@@ -186,11 +186,11 @@ func (p *plugin) initInstance(name, _path string, impl gop.Plugin) (*gop.Client,
 	return client, raw, nil
 }
 
-func (p *plugin) Deinit() error {
-	return p.deinitHelper(p.client)
+func (p *plugin) Deinit(ctx context.Context) error {
+	return p.deinitHelper(ctx, p.client)
 }
 
-func (p *plugin) deinitHelper(cli []*gop.Client) error {
+func (p *plugin) deinitHelper(_ context.Context, cli []*gop.Client) error {
 	for _, item := range cli {
 		item.Kill()
 	}
@@ -198,7 +198,7 @@ func (p *plugin) deinitHelper(cli []*gop.Client) error {
 	return nil
 }
 
-func (p *plugin) RunFetch(name, host string) (FetchResult, error) {
+func (p *plugin) RunFetch(_ context.Context, name, host string) (FetchResult, error) {
 	if _, ok := p.fetch[name]; !ok {
 		return FetchResult{}, errors.New("invalid name")
 	}
@@ -206,7 +206,7 @@ func (p *plugin) RunFetch(name, host string) (FetchResult, error) {
 	return p.fetch[name].Run(host), nil
 }
 
-func (p *plugin) RunFilter(name string, task *common.Task, node *common.Node) (FilterResult, error) {
+func (p *plugin) RunFilter(_ context.Context, name string, task *common.Task, node *common.Node) (FilterResult, error) {
 	if _, ok := p.filter[name]; !ok {
 		return FilterResult{}, errors.New("invalid name")
 	}
@@ -219,7 +219,7 @@ func (p *plugin) RunFilter(name string, task *common.Task, node *common.Node) (F
 	return p.filter[name].Run(args), nil
 }
 
-func (p *plugin) RunScore(name string, task *common.Task, node *common.Node) (ScoreResult, error) {
+func (p *plugin) RunScore(_ context.Context, name string, task *common.Task, node *common.Node) (ScoreResult, error) {
 	if _, ok := p.score[name]; !ok {
 		return ScoreResult{}, errors.New("invalid name")
 	}

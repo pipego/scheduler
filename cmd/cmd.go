@@ -24,39 +24,39 @@ var (
 	listenUrl  = app.Flag("listen-url", "Listen URL (host:port)").Required().String()
 )
 
-func Run() error {
+func Run(ctx context.Context) error {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
-	cfg, err := initConfig(*configFile)
+	cfg, err := initConfig(ctx, *configFile)
 	if err != nil {
 		return errors.Wrap(err, "failed to init config")
 	}
 
-	pl, err := initPlugin(cfg)
+	pl, err := initPlugin(ctx, cfg)
 	if err != nil {
 		return errors.Wrap(err, "failed to init plugin")
 	}
 
-	sched, err := initScheduler(cfg, pl)
+	sched, err := initScheduler(ctx, cfg, pl)
 	if err != nil {
 		return errors.Wrap(err, "failed to init scheduler")
 	}
 
-	_ = registerNotify(sched)
+	_ = registerNotify(ctx, sched)
 
-	srv, err := initServer(cfg, sched)
+	srv, err := initServer(ctx, cfg, sched)
 	if err != nil {
 		return errors.Wrap(err, "failed to init server")
 	}
 
-	if err := runPipe(srv); err != nil {
+	if err := runPipe(ctx, srv); err != nil {
 		return errors.Wrap(err, "failed to run pipe")
 	}
 
 	return nil
 }
 
-func initConfig(name string) (*config.Config, error) {
+func initConfig(_ context.Context, name string) (*config.Config, error) {
 	c := config.New()
 
 	fi, err := os.Open(name)
@@ -77,7 +77,7 @@ func initConfig(name string) (*config.Config, error) {
 	return c, nil
 }
 
-func initPlugin(cfg *config.Config) (plugin.Plugin, error) {
+func initPlugin(ctx context.Context, cfg *config.Config) (plugin.Plugin, error) {
 	c := plugin.DefaultConfig()
 	if c == nil {
 		return nil, errors.New("failed to config")
@@ -85,10 +85,10 @@ func initPlugin(cfg *config.Config) (plugin.Plugin, error) {
 
 	c.Config = *cfg
 
-	return plugin.New(context.Background(), c), nil
+	return plugin.New(ctx, c), nil
 }
 
-func initScheduler(cfg *config.Config, pl plugin.Plugin) (scheduler.Scheduler, error) {
+func initScheduler(ctx context.Context, cfg *config.Config, pl plugin.Plugin) (scheduler.Scheduler, error) {
 	c := scheduler.DefaultConfig()
 	if c == nil {
 		return nil, errors.New("failed to config")
@@ -97,10 +97,10 @@ func initScheduler(cfg *config.Config, pl plugin.Plugin) (scheduler.Scheduler, e
 	c.Config = *cfg
 	c.Plugin = pl
 
-	return scheduler.New(context.Background(), c), nil
+	return scheduler.New(ctx, c), nil
 }
 
-func registerNotify(sched scheduler.Scheduler) error {
+func registerNotify(ctx context.Context, sched scheduler.Scheduler) error {
 	s := make(chan os.Signal, 1)
 
 	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
@@ -109,7 +109,7 @@ func registerNotify(sched scheduler.Scheduler) error {
 	go func() {
 		sig := <-s
 		fmt.Println(sig)
-		_ = sched.Deinit()
+		_ = sched.Deinit(ctx)
 		done <- true
 	}()
 
@@ -118,7 +118,7 @@ func registerNotify(sched scheduler.Scheduler) error {
 	return nil
 }
 
-func initServer(cfg *config.Config, sched scheduler.Scheduler) (server.Server, error) {
+func initServer(ctx context.Context, cfg *config.Config, sched scheduler.Scheduler) (server.Server, error) {
 	c := server.DefaultConfig()
 	if c == nil {
 		return nil, errors.New("failed to config")
@@ -128,15 +128,15 @@ func initServer(cfg *config.Config, sched scheduler.Scheduler) (server.Server, e
 	c.Config = *cfg
 	c.Scheduler = sched
 
-	return server.New(context.Background(), c), nil
+	return server.New(ctx, c), nil
 }
 
-func runPipe(srv server.Server) error {
-	if err := srv.Init(); err != nil {
+func runPipe(ctx context.Context, srv server.Server) error {
+	if err := srv.Init(ctx); err != nil {
 		return errors.Wrap(err, "failed to init")
 	}
 
-	if err := srv.Run(); err != nil {
+	if err := srv.Run(ctx); err != nil {
 		return errors.Wrap(err, "failed to run")
 	}
 

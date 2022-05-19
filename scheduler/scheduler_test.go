@@ -36,6 +36,7 @@ func initPlugin(cfg *config.Config) plugin.Plugin {
 
 func TestRunFetchPlugins(t *testing.T) {
 	var nodes []*common.Node
+	ctx := context.Background()
 
 	s := scheduler{
 		cfg: &Config{
@@ -44,10 +45,10 @@ func TestRunFetchPlugins(t *testing.T) {
 		},
 	}
 
-	_ = s.Init()
-	_, err := s.runFetchPlugins(nodes)
+	_ = s.Init(ctx)
+	_, err := s.runFetchPlugins(ctx, nodes)
 	assert.Equal(t, nil, err)
-	_ = s.Deinit()
+	_ = s.Deinit(ctx)
 
 	cfg.Spec.Fetch.Enabled = []config.Enabled{
 		{
@@ -67,10 +68,10 @@ func TestRunFetchPlugins(t *testing.T) {
 		},
 	}
 
-	_ = s.Init()
-	_, err = s.runFetchPlugins(nodes)
+	_ = s.Init(ctx)
+	_, err = s.runFetchPlugins(ctx, nodes)
 	assert.NotEqual(t, nil, err)
-	_ = s.Deinit()
+	_ = s.Deinit(ctx)
 
 	cfg.Spec.Fetch.Enabled = []config.Enabled{
 		{
@@ -86,17 +87,18 @@ func TestRunFetchPlugins(t *testing.T) {
 		},
 	}
 
-	_ = s.Init()
+	_ = s.Init(ctx)
 	nodes = append(nodes, &common.Node{Host: "127.0.0.1"})
-	buf, err := s.runFetchPlugins(nodes)
+	buf, err := s.runFetchPlugins(ctx, nodes)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, int64(100), buf[0].AllocatableResource.MilliCPU)
-	_ = s.Deinit()
+	_ = s.Deinit(ctx)
 }
 
 func TestRunFilterPlugins(t *testing.T) {
 	var task common.Task
 	var nodes []*common.Node
+	ctx := context.Background()
 
 	s := scheduler{
 		cfg: &Config{
@@ -105,10 +107,10 @@ func TestRunFilterPlugins(t *testing.T) {
 		},
 	}
 
-	_ = s.Init()
-	_, err := s.runFilterPlugins(&task, nodes)
+	_ = s.Init(ctx)
+	_, err := s.runFilterPlugins(ctx, &task, nodes)
 	assert.Equal(t, nil, err)
-	_ = s.Deinit()
+	_ = s.Deinit(ctx)
 
 	cfg.Spec.Filter.Enabled = []config.Enabled{
 		{
@@ -130,17 +132,18 @@ func TestRunFilterPlugins(t *testing.T) {
 		},
 	}
 
-	_ = s.Init()
+	_ = s.Init(ctx)
 	nodes = append(nodes, &common.Node{Host: "127.0.0.1"})
-	buf, err := s.runFilterPlugins(&task, nodes)
+	buf, err := s.runFilterPlugins(ctx, &task, nodes)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 1, len(buf))
-	_ = s.Deinit()
+	_ = s.Deinit(ctx)
 }
 
 func TestRunScorePlugins(t *testing.T) {
 	var task common.Task
 	var nodes []*common.Node
+	ctx := context.Background()
 
 	s := scheduler{
 		cfg: &Config{
@@ -149,10 +152,10 @@ func TestRunScorePlugins(t *testing.T) {
 		},
 	}
 
-	_ = s.Init()
-	_, err := s.runScorePlugins(&task, nodes)
+	_ = s.Init(ctx)
+	_, err := s.runScorePlugins(ctx, &task, nodes)
 	assert.NotEqual(t, nil, err)
-	_ = s.Deinit()
+	_ = s.Deinit(ctx)
 
 	cfg.Spec.Score.Enabled = []config.Enabled{
 		{
@@ -174,20 +177,21 @@ func TestRunScorePlugins(t *testing.T) {
 		},
 	}
 
-	_ = s.Init()
+	_ = s.Init(ctx)
 	nodes = append(nodes, &common.Node{Host: "127.0.0.1"})
-	buf, err := s.runScorePlugins(&task, nodes)
+	buf, err := s.runScorePlugins(ctx, &task, nodes)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 2, len(buf))
-	_ = s.Deinit()
+	_ = s.Deinit(ctx)
 }
 
 func TestSelectHost(t *testing.T) {
 	var scores []nodeScore
+	ctx := context.Background()
 
 	s := scheduler{}
 
-	_, err := s.selectHost(scores)
+	_, err := s.selectHost(ctx, scores)
 	assert.NotEqual(t, nil, err)
 
 	scores = append(scores, nodeScore{
@@ -195,7 +199,7 @@ func TestSelectHost(t *testing.T) {
 		score: 0,
 	})
 
-	buf, err := s.selectHost(scores)
+	buf, err := s.selectHost(ctx, scores)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "name1", buf)
 
@@ -204,7 +208,7 @@ func TestSelectHost(t *testing.T) {
 		score: 1,
 	})
 
-	buf, err = s.selectHost(scores)
+	buf, err = s.selectHost(ctx, scores)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "name2", buf)
 
@@ -213,7 +217,7 @@ func TestSelectHost(t *testing.T) {
 		score: 1,
 	})
 
-	buf, err = s.selectHost(scores)
+	buf, err = s.selectHost(ctx, scores)
 	assert.Equal(t, nil, err)
 	assert.NotEqual(t, "", buf)
 }
