@@ -11,10 +11,6 @@ builds:
     flags:
       - -trimpath
     ldflags: -s -w -X github.com/pipego/scheduler/config.Build={{.Date}} -X github.com/pipego/scheduler/config.Version={{.Version}}
-    hooks:
-      post:
-        - cp config/config.yml bin
-        - ./script/plugin.sh
 
 dockers:
   - image_templates: ["ghcr.io/pipego/{{ .ProjectName }}:{{ .Tag }}-amd64"]
