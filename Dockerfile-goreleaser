@@ -6,4 +6,5 @@ COPY plugin-filter /
 COPY plugin-score /
 COPY scheduler /
 USER nonroot:nonroot
-ENTRYPOINT ["/scheduler"]
+EXPOSE 28082
+CMD ["/scheduler", "--config-file=/config.yml", "--listen-url=:28082"]

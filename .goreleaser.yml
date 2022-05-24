@@ -13,9 +13,8 @@ builds:
     ldflags: -s -w -X github.com/pipego/scheduler/config.Build={{.Date}} -X github.com/pipego/scheduler/config.Version={{.Version}}
     hooks:
       post:
-        - URL=$(curl -L -s https://api.github.com/repos/pipego/plugin-fetch/releases/latest | grep -o -E "https://(.*)plugin-fetch_(.*)_linux_amd64.tar.gz"); curl -L -s $URL | tar xvz -C bin
-        - URL=$(curl -L -s https://api.github.com/repos/pipego/plugin-filter/releases/latest | grep -o -E "https://(.*)plugin-filter_(.*)_linux_amd64.tar.gz"); curl -L -s $URL | tar xvz -C bin
-        - URL=$(curl -L -s https://api.github.com/repos/pipego/plugin-score/releases/latest | grep -o -E "https://(.*)plugin-score_(.*)_linux_amd64.tar.gz"); curl -L -s $URL | tar xvz -C bin
+        - cp config/config.yml bin
+        - ./script/plugin.sh
 
 dockers:
   - image_templates: ["ghcr.io/pipego/{{ .ProjectName }}:{{ .Tag }}-amd64"]

@@ -3,13 +3,8 @@ WORKDIR /go/src/app
 COPY . .
 RUN apt update && \
     apt install -y upx
-RUN make build
-RUN URL=$(curl -L -s https://api.github.com/repos/pipego/plugin-fetch/releases/latest | grep -o -E "https://(.*)plugin-fetch_(.*)_linux_amd64.tar.gz") && \
-    curl -L -s $URL | tar xvz -C bin && \
-    URL=$(curl -L -s https://api.github.com/repos/pipego/plugin-filter/releases/latest | grep -o -E "https://(.*)plugin-filter_(.*)_linux_amd64.tar.gz") && \
-    curl -L -s $URL | tar xvz -C bin && \
-    URL=$(curl -L -s https://api.github.com/repos/pipego/plugin-score/releases/latest | grep -o -E "https://(.*)plugin-score_(.*)_linux_amd64.tar.gz") && \
-    curl -L -s $URL | tar xvz -C bin
+RUN make build && \
+    make plugin
 
 FROM gcr.io/distroless/base-debian11 AS production-stage
 WORKDIR /

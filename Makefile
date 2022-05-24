@@ -19,6 +19,9 @@ docker: go-docker
 lint: go-lint
 .PHONY: lint
 
+plugin: go-plugin
+.PHONY: plugin
+
 proto: go-proto
  .PHONY: proto
 
@@ -39,6 +42,9 @@ go-docker: FORCE
 
 go-lint: FORCE
 	./script/lint.sh
+
+go-plugin: FORCE
+	./script/plugin.sh
 
 go-proto: FORCE
 	./script/proto.sh
