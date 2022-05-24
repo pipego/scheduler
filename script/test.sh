@@ -11,7 +11,7 @@ for item in $(ls $filepath); do
           buf=${name%.go}
           name=${buf##*/}
           # go tool dist list
-          CGO_ENABLED=0 GOARCH=$(go env GOARCH) GOOS=$(go env GOOS) go build -ldflags "-s -w" -o plugin/"$item"-"$name" "$filepath"/"$item"/"$dname"/"$name".go
+          CGO_ENABLED=0 GOARCH=$(go env GOARCH) GOOS=$(go env GOOS) go build -ldflags "-s -w" -o "$item"-"$name" "$filepath"/"$item"/"$dname"/"$name".go
         done
       fi
     done

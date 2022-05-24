@@ -2,6 +2,6 @@
 
 rm -rf bin
 rm -rf coverage.txt
-rm -rf plugin/fetch-*
-rm -rf plugin/filter-*
-rm -rf plugin/score-*
+rm -rf fetch-*
+rm -rf filter-*
+rm -rf score-*

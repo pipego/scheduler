@@ -1,5 +1,9 @@
 FROM gcr.io/distroless/base-debian11 AS production-stage
 WORKDIR /
+COPY config.yml /
+COPY plugin-fetch /
+COPY plugin-filter /
+COPY plugin-score /
 COPY scheduler /
 USER nonroot:nonroot
 ENTRYPOINT ["/scheduler"]

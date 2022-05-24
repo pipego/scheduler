@@ -62,11 +62,11 @@ func TestRunFetchPlugins(t *testing.T) {
 	cfg.Spec.Fetch.Enabled = []config.Enabled{
 		{
 			Name: "LocalHost",
-			Path: "../plugin/fetch-localhost",
+			Path: "../fetch-localhost",
 		},
 		{
 			Name: "LocalHost",
-			Path: "../plugin/fetch-localhost",
+			Path: "../fetch-localhost",
 		},
 	}
 
@@ -86,7 +86,7 @@ func TestRunFetchPlugins(t *testing.T) {
 	cfg.Spec.Fetch.Enabled = []config.Enabled{
 		{
 			Name: "LocalHost",
-			Path: "../plugin/fetch-localhost",
+			Path: "../fetch-localhost",
 		},
 	}
 
@@ -127,12 +127,12 @@ func TestRunFilterPlugins(t *testing.T) {
 	cfg.Spec.Filter.Enabled = []config.Enabled{
 		{
 			Name:     "NodeAffinity",
-			Path:     "../plugin/filter-nodeaffinity",
+			Path:     "../filter-nodeaffinity",
 			Priority: 2,
 		},
 		{
 			Name:     "NodeName",
-			Path:     "../plugin/filter-nodename",
+			Path:     "../filter-nodename",
 			Priority: 1,
 		},
 	}
@@ -174,12 +174,12 @@ func TestRunScorePlugins(t *testing.T) {
 	cfg.Spec.Score.Enabled = []config.Enabled{
 		{
 			Name:   "NodeResourcesFit",
-			Path:   "../plugin/score-noderesourcesfit",
+			Path:   "../score-noderesourcesfit",
 			Weight: 2,
 		},
 		{
 			Name:   "NodeResourcesBalancedAllocation",
-			Path:   "../plugin/score-noderesourcesbalancedallocation",
+			Path:   "../score-noderesourcesbalancedallocation",
 			Weight: 1,
 		},
 	}

@@ -41,11 +41,11 @@ func TestInitPlugin(t *testing.T) {
 	cfg.Enabled = []config.Enabled{
 		{
 			Name: "LocalHost",
-			Path: "./fetch-localhost",
+			Path: "../fetch-localhost",
 		},
 		{
 			Name: "LocalHost",
-			Path: "./fetch-localhost",
+			Path: "../fetch-localhost",
 		},
 	}
 
@@ -58,14 +58,14 @@ func TestInitPlugin(t *testing.T) {
 	cfg.Disabled = []config.Disabled{
 		{
 			Name: "LocalHost",
-			Path: "./fetch-localhost",
+			Path: "../fetch-localhost",
 		},
 	}
 
 	cfg.Enabled = []config.Enabled{
 		{
 			Name: "LocalHost",
-			Path: "./fetch-localhost",
+			Path: "../fetch-localhost",
 		},
 	}
 
@@ -80,7 +80,7 @@ func TestInitPlugin(t *testing.T) {
 	cfg.Enabled = []config.Enabled{
 		{
 			Name: "LocalHost",
-			Path: "./fetch-localhost",
+			Path: "../fetch-localhost",
 		},
 	}
 
@@ -114,7 +114,7 @@ func TestInitInstance(t *testing.T) {
 	assert.NotEqual(t, nil, err)
 
 	name = "LocalHost"
-	_path = "./fetch-localhost"
+	_path = "../fetch-localhost"
 
 	c, _, err := pl.initInstance(ctx, name, _path, &Fetch{})
 	assert.Equal(t, nil, err)
@@ -131,7 +131,7 @@ func TestRunFetch(t *testing.T) {
 	cfg.Enabled = []config.Enabled{
 		{
 			Name: "LocalHost",
-			Path: "./fetch-localhost",
+			Path: "../fetch-localhost",
 		},
 	}
 
@@ -161,7 +161,7 @@ func TestRunFilter(t *testing.T) {
 	cfg.Enabled = []config.Enabled{
 		{
 			Name: "NodeName",
-			Path: "./filter-nodename",
+			Path: "../filter-nodename",
 		},
 	}
 
@@ -194,7 +194,7 @@ func TestRunScore(t *testing.T) {
 	cfg.Enabled = []config.Enabled{
 		{
 			Name: "NodeResourcesFit",
-			Path: "./score-noderesourcesfit",
+			Path: "../score-noderesourcesfit",
 		},
 	}
 

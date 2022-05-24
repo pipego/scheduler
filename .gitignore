@@ -14,6 +14,6 @@
 .idea/
 bin/
 coverage.txt
-plugin/fetch-*
-plugin/filter-*
-plugin/score-*
+fetch-*
+filter-*
+score-*
