@@ -8,9 +8,14 @@ RUN make build && \
 
 FROM gcr.io/distroless/base-debian11 AS production-stage
 WORKDIR /
-COPY --from=build-stage /go/src/app/bin/plugin-fetch /
-COPY --from=build-stage /go/src/app/bin/plugin-filter /
-COPY --from=build-stage /go/src/app/bin/plugin-score /
+COPY --from=build-stage /go/src/app/bin/fetch-localhost /
+COPY --from=build-stage /go/src/app/bin/fetch-metalflow /
+COPY --from=build-stage /go/src/app/bin/filter-nodeaffinity /
+COPY --from=build-stage /go/src/app/bin/filter-nodename /
+COPY --from=build-stage /go/src/app/bin/filter-noderesourcesfit /
+COPY --from=build-stage /go/src/app/bin/filter-nodeunschedulable /
+COPY --from=build-stage /go/src/app/bin/score-noderesourcesbalancedallocation /
+COPY --from=build-stage /go/src/app/bin/score-noderesourcesfit /
 COPY --from=build-stage /go/src/app/bin/scheduler /
 COPY --from=build-stage /go/src/app/config/config.yml /
 USER nonroot:nonroot
