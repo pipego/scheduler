@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "github.com/pipego/scheduler/server";
 
-package server;
+package scheduler;
 
 // The service definition.
 service ServerProto {
