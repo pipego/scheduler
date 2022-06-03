@@ -33,12 +33,8 @@ type Config struct {
 
 type server struct {
 	cfg   *Config
-	ctx   context.Context
 	nodes []*common.Node
 	task  *common.Task
-}
-
-type rpcServer struct {
 	pb.UnimplementedServerProtoServer
 }
 
@@ -64,29 +60,27 @@ func (s *server) Deinit(ctx context.Context) error {
 	return s.cfg.Scheduler.Deinit(ctx)
 }
 
-func (s *server) Run(ctx context.Context) error {
-	s.ctx = ctx
-
+func (s *server) Run(_ context.Context) error {
 	options := []grpc.ServerOption{grpc.MaxRecvMsgSize(math.MaxInt32), grpc.MaxSendMsgSize(math.MaxInt32)}
 
 	g := grpc.NewServer(options...)
-	pb.RegisterServerProtoServer(g, &rpcServer{})
+	pb.RegisterServerProtoServer(g, &server{})
 
 	lis, _ := net.Listen("tcp", s.cfg.Address)
 
 	return g.Serve(lis)
 }
 
-func (s *server) SendServer(in *pb.ServerRequest) (*pb.ServerReply, error) {
+func (s *server) SendServer(ctx context.Context, in *pb.ServerRequest) (*pb.ServerReply, error) {
 	if in.GetKind() != KIND {
 		return &pb.ServerReply{Error: "invalid kind"}, nil
 	}
 
-	if err := s.sendHelper(s.ctx, in.GetSpec().GetTask(), in.GetSpec().GetNodes()); err != nil {
+	if err := s.sendHelper(ctx, in.GetSpec().GetTask(), in.GetSpec().GetNodes()); err != nil {
 		return &pb.ServerReply{Error: "invalid spec"}, nil
 	}
 
-	res := s.cfg.Scheduler.Run(s.ctx, s.task, s.nodes)
+	res := s.cfg.Scheduler.Run(ctx, s.task, s.nodes)
 
 	return &pb.ServerReply{
 		Name:  res.Name,

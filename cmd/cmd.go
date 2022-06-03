@@ -145,20 +145,22 @@ func runPipe(ctx context.Context, srv server.Server) error {
 		}
 	}()
 
-	// Wait for interrupt signal to gracefully shutdown the server with a timeout of 5 seconds.
-	quit := make(chan os.Signal, 1)
+	s := make(chan os.Signal, 1)
 
 	// kill (no param) default send syscanll.SIGTERM
 	// kill -2 is syscall.SIGINT
 	// kill -9 is syscall.SIGKILL but can"t be caught, so don't need add it
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
 
-	c, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
+	done := make(chan bool, 1)
 
-	_ = srv.Deinit(c)
-	<-c.Done()
+	go func() {
+		<-s
+		_ = srv.Deinit(ctx)
+		done <- true
+	}()
+
+	<-done
 
 	return nil
 }
