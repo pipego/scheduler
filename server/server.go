@@ -64,7 +64,7 @@ func (s *server) Run(_ context.Context) error {
 	options := []grpc.ServerOption{grpc.MaxRecvMsgSize(math.MaxInt32), grpc.MaxSendMsgSize(math.MaxInt32)}
 
 	g := grpc.NewServer(options...)
-	pb.RegisterServerProtoServer(g, &server{})
+	pb.RegisterServerProtoServer(g, s)
 
 	lis, _ := net.Listen("tcp", s.cfg.Address)
 
