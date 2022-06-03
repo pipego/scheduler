@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/pkg/errors"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -17,6 +18,10 @@ import (
 	"github.com/pipego/scheduler/plugin"
 	"github.com/pipego/scheduler/scheduler"
 	"github.com/pipego/scheduler/server"
+)
+
+const (
+	timeout = 5 * time.Second
 )
 
 var (
@@ -47,8 +52,6 @@ func Run(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to init scheduler")
 	}
-
-	_ = registerNotify(ctx, sched)
 
 	srv, err := initServer(ctx, cfg, sched)
 	if err != nil {
@@ -118,24 +121,6 @@ func initScheduler(ctx context.Context, cfg *config.Config, pa parallelizer.Para
 	return scheduler.New(ctx, c), nil
 }
 
-func registerNotify(ctx context.Context, sched scheduler.Scheduler) error {
-	s := make(chan os.Signal, 1)
-
-	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
-	done := make(chan bool, 1)
-
-	go func() {
-		sig := <-s
-		fmt.Println(sig)
-		_ = sched.Deinit(ctx)
-		done <- true
-	}()
-
-	<-done
-
-	return nil
-}
-
 func initServer(ctx context.Context, cfg *config.Config, sched scheduler.Scheduler) (server.Server, error) {
 	c := server.DefaultConfig()
 	if c == nil {
@@ -154,9 +139,26 @@ func runPipe(ctx context.Context, srv server.Server) error {
 		return errors.Wrap(err, "failed to init")
 	}
 
-	if err := srv.Run(ctx); err != nil {
-		return errors.Wrap(err, "failed to run")
-	}
+	go func() {
+		if err := srv.Run(ctx); err != nil {
+			log.Fatalf("failed to run: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server with a timeout of 5 seconds.
+	quit := make(chan os.Signal, 1)
+
+	// kill (no param) default send syscanll.SIGTERM
+	// kill -2 is syscall.SIGINT
+	// kill -9 is syscall.SIGKILL but can"t be caught, so don't need add it
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	c, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	_ = srv.Deinit(c)
+	<-c.Done()
 
 	return nil
 }

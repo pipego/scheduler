@@ -21,6 +21,7 @@ const (
 
 type Server interface {
 	Init(context.Context) error
+	Deinit(context.Context) error
 	Run(context.Context) error
 }
 
@@ -57,6 +58,10 @@ func (s *server) Init(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *server) Deinit(ctx context.Context) error {
+	return s.cfg.Scheduler.Deinit(ctx)
 }
 
 func (s *server) Run(ctx context.Context) error {
