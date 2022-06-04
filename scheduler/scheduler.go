@@ -98,12 +98,12 @@ func (s *scheduler) Run(ctx context.Context, task *common.Task, nodes []*common.
 
 func (s *scheduler) runFetchPlugins(ctx context.Context, nodes []*common.Node) ([]*common.Node, error) {
 	helper := func(node *common.Node, res plugin.FetchResult) *common.Node {
-		if res.AllocatableResource.MilliCPU < 0 ||
-			res.AllocatableResource.Memory < 0 ||
-			res.AllocatableResource.Storage < 0 ||
-			res.RequestedResource.MilliCPU < 0 ||
-			res.RequestedResource.Memory < 0 ||
-			res.RequestedResource.Storage < 0 {
+		if res.AllocatableResource.MilliCPU <= 0 &&
+			res.AllocatableResource.Memory <= 0 &&
+			res.AllocatableResource.Storage <= 0 &&
+			res.RequestedResource.MilliCPU <= 0 &&
+			res.RequestedResource.Memory <= 0 &&
+			res.RequestedResource.Storage <= 0 {
 			return node
 		}
 		node.AllocatableResource.MilliCPU = res.AllocatableResource.MilliCPU
@@ -207,24 +207,38 @@ func (s *scheduler) runScorePlugins(ctx context.Context, task *common.Task, node
 
 // nolint: gosec
 func (s *scheduler) selectHost(_ context.Context, scores []nodeScore) (string, error) {
+	helper := func(s []nodeScore) map[string]int64 {
+		b := make(map[string]int64)
+		for _, item := range s {
+			if _, ok := b[item.name]; ok {
+				b[item.name] += item.score
+			} else {
+				b[item.name] = item.score
+			}
+		}
+		return b
+	}
+
 	if len(scores) == 0 {
 		return "", errors.New("invalid scores")
 	}
 
-	count := 1
-	selected := scores[0].name
-	max := scores[0].score
+	buf := helper(scores)
 
-	for _, item := range scores[1:] {
-		if item.score > max {
-			max = item.score
-			selected = item.name
+	count := 1
+	max := int64(-1)
+	selected := ""
+
+	for key, val := range buf {
+		if val > max {
+			max = val
+			selected = key
 			count = 1
-		} else if item.score == max {
+		} else if val == max {
 			count++
 			if rand.Intn(count) == 0 {
 				// Replace the candidate with probability of 1/count
-				selected = item.name
+				selected = key
 			}
 		}
 	}
