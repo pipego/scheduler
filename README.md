@@ -112,7 +112,7 @@ spec:
     "task": {
       "name": "task1",
       "nodeName": "node1",
-      "nodeSelector": [
+      "nodeSelectors": [
         "ssd"
       ],
       "requestedResource": {

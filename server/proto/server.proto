@@ -29,7 +29,7 @@ message Spec {
 message Task {
   string name = 1;
   string nodeName = 2;
-  repeated string nodeSelector = 3;
+  repeated string nodeSelectors = 3;
   RequestedResource requestedResource = 4;
   bool toleratesUnschedulable = 5;
 }

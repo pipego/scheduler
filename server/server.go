@@ -119,7 +119,7 @@ func (s *server) sendHelper(_ context.Context, task *pb.Task, nodes []*pb.Node) 
 	s.task = &common.Task{
 		Name:                   task.GetName(),
 		NodeName:               task.GetNodeName(),
-		NodeSelector:           task.GetNodeSelector(),
+		NodeSelectors:          task.GetNodeSelectors(),
 		RequestedResource:      taskHelper(task),
 		ToleratesUnschedulable: task.GetToleratesUnschedulable(),
 	}

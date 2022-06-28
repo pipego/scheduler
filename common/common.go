@@ -59,7 +59,7 @@ type Node struct {
 type Task struct {
 	Name                   string   `json:"name"`
 	NodeName               string   `json:"nodeName"`
-	NodeSelector           []string `json:"nodeSelector"`
+	NodeSelectors          []string `json:"nodeSelectors"`
 	RequestedResource      Resource `json:"requestedResource"`
 	ToleratesUnschedulable bool     `json:"toleratesUnschedulable"`
 }
