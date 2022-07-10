@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/goleak"
 )
 
 func TestParallelizeUntil(t *testing.T) {
@@ -14,6 +15,8 @@ func TestParallelizeUntil(t *testing.T) {
 		"piece2",
 		"piece3",
 	}
+
+	defer goleak.VerifyNone(t)
 
 	ParallelizeUntil(context.Background(), DefaultParallelism, len(pieces), func(index int) {
 		fmt.Println(pieces[index])
