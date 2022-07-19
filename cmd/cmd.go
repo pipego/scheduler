@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -35,7 +35,7 @@ var rootCmd = &cobra.Command{
 			_ = cmd.Help()
 			return
 		}
-		cobra.CheckErr(run(context.Background()))
+		cobra.CheckErr(loadConfig())
 	},
 }
 
@@ -66,54 +66,88 @@ func Execute() error {
 	return rootCmd.Execute()
 }
 
-func run(ctx context.Context) error {
+func loadConfig() error {
+	helper := func(ctx context.Context, cfg *config.Config) (server.Server, error) {
+		if err := viper.ReadInConfig(); err != nil {
+			return nil, errors.Wrap(err, "failed to read config")
+		}
+		if err := viper.Unmarshal(cfg); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal config")
+		}
+		srv, err := initPipe(ctx, cfg)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to init pipe")
+		}
+		return srv, nil
+	}
+
 	cfg := config.New()
+	ctx := context.Background()
+	reload := make(chan bool, 1)
 
-	if err := initConfig(ctx, cfg); err != nil {
-		return errors.Wrap(err, "failed to init config")
-	}
+	// kill (no param) default send syscanll.SIGTERM
+	// kill -2 is syscall.SIGINT
+	// kill -9 is syscall.SIGKILL but can"t be caught, so don't need add it
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
-	pa, err := initParallelizer(ctx, cfg)
+	srv, err := helper(ctx, cfg)
 	if err != nil {
-		return errors.Wrap(err, "failed to init parallelizer")
+		return errors.Wrap(err, "failed to load")
 	}
 
-	pl, err := initPlugin(ctx, cfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to init plugin")
+	if err = runPipe(ctx, srv); err != nil {
+		return errors.Wrap(err, "failed to run")
 	}
 
-	sched, err := initScheduler(ctx, cfg, pa, pl)
-	if err != nil {
-		return errors.Wrap(err, "failed to init scheduler")
-	}
+	viper.WatchConfig()
+	viper.OnConfigChange(func(e fsnotify.Event) {
+		reload <- true
+	})
 
-	srv, err := initServer(ctx, cfg, sched)
-	if err != nil {
-		return errors.Wrap(err, "failed to init server")
-	}
-
-	if err := runPipe(ctx, srv); err != nil {
-		return errors.Wrap(err, "failed to run pipe")
+L:
+	for {
+		select {
+		case <-reload:
+			_ = stopPipe(ctx, srv)
+			srv, err = helper(ctx, cfg)
+			if err != nil {
+				return errors.Wrap(err, "failed to reload")
+			}
+			if err := runPipe(ctx, srv); err != nil {
+				return errors.Wrap(err, "failed to run")
+			}
+		case <-sig:
+			_ = stopPipe(ctx, srv)
+			break L
+		}
 	}
 
 	return nil
 }
 
-func initConfig(_ context.Context, cfg *config.Config) error {
-	helper := func(cfg *config.Config) {
-		_ = viper.ReadInConfig()
-		_ = viper.Unmarshal(cfg)
+func initPipe(ctx context.Context, cfg *config.Config) (server.Server, error) {
+	pa, err := initParallelizer(ctx, cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to init parallelizer")
 	}
 
-	helper(cfg)
+	pl, err := initPlugin(ctx, cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to init plugin")
+	}
 
-	viper.WatchConfig()
-	viper.OnConfigChange(func(e fsnotify.Event) {
-		helper(cfg)
-	})
+	sched, err := initScheduler(ctx, cfg, pa, pl)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to init scheduler")
+	}
 
-	return nil
+	srv, err := initServer(ctx, cfg, sched)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to init server")
+	}
+
+	return srv, nil
 }
 
 func initParallelizer(ctx context.Context, cfg *config.Config) (parallelizer.Parallelizer, error) {
@@ -171,26 +205,14 @@ func runPipe(ctx context.Context, srv server.Server) error {
 
 	go func() {
 		if err := srv.Run(ctx); err != nil {
-			log.Fatalf("failed to run: %v", err)
+			fmt.Println("failed to run")
+			return
 		}
 	}()
 
-	s := make(chan os.Signal, 1)
-
-	// kill (no param) default send syscanll.SIGTERM
-	// kill -2 is syscall.SIGINT
-	// kill -9 is syscall.SIGKILL but can"t be caught, so don't need add it
-	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
-
-	done := make(chan bool, 1)
-
-	go func() {
-		<-s
-		_ = srv.Deinit(ctx)
-		done <- true
-	}()
-
-	<-done
-
 	return nil
+}
+
+func stopPipe(ctx context.Context, srv server.Server) error {
+	return srv.Deinit(ctx)
 }

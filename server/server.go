@@ -34,6 +34,7 @@ type Config struct {
 type server struct {
 	cfg   *Config
 	nodes []*common.Node
+	srv   *grpc.Server
 	task  *common.Task
 	pb.UnimplementedServerProtoServer
 }
@@ -53,22 +54,22 @@ func (s *server) Init(ctx context.Context) error {
 		return errors.Wrap(err, "failed to init scheduler")
 	}
 
+	options := []grpc.ServerOption{grpc.MaxRecvMsgSize(math.MaxInt32), grpc.MaxSendMsgSize(math.MaxInt32)}
+
+	s.srv = grpc.NewServer(options...)
+	pb.RegisterServerProtoServer(s.srv, s)
+
 	return nil
 }
 
 func (s *server) Deinit(ctx context.Context) error {
+	s.srv.Stop()
 	return s.cfg.Scheduler.Deinit(ctx)
 }
 
 func (s *server) Run(_ context.Context) error {
-	options := []grpc.ServerOption{grpc.MaxRecvMsgSize(math.MaxInt32), grpc.MaxSendMsgSize(math.MaxInt32)}
-
-	g := grpc.NewServer(options...)
-	pb.RegisterServerProtoServer(g, s)
-
 	lis, _ := net.Listen("tcp", s.cfg.Address)
-
-	return g.Serve(lis)
+	return s.srv.Serve(lis)
 }
 
 func (s *server) SendServer(ctx context.Context, in *pb.ServerRequest) (*pb.ServerReply, error) {
