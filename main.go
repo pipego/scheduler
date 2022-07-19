@@ -1,16 +1,13 @@
 package main
 
 import (
-	"context"
 	"os"
 
 	"github.com/pipego/scheduler/cmd"
 )
 
 func main() {
-	ctx := context.Background()
-
-	if err := cmd.Run(ctx); err != nil {
+	if err := cmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 

@@ -2,16 +2,16 @@ package cmd
 
 import (
 	"context"
-	"io"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
+	"github.com/fsnotify/fsnotify"
+	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
-	"gopkg.in/alecthomas/kingpin.v2"
-	"gopkg.in/yaml.v3"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/pipego/scheduler/config"
 	"github.com/pipego/scheduler/parallelizer"
@@ -20,21 +20,56 @@ import (
 	"github.com/pipego/scheduler/server"
 )
 
-const (
-	timeout = 5 * time.Second
-)
-
 var (
-	app        = kingpin.New("scheduler", "pipego scheduler").Version(config.Version + "-build-" + config.Build)
-	configFile = app.Flag("config-file", "Config file (.yml)").Required().String()
-	listenUrl  = app.Flag("listen-url", "Listen URL (host:port)").Required().String()
+	configFile string
+	listenUrl  string
 )
 
-func Run(ctx context.Context) error {
-	kingpin.MustParse(app.Parse(os.Args[1:]))
+var rootCmd = &cobra.Command{
+	Use:     "scheduler",
+	Version: config.Version + "-build-" + config.Build,
+	Short:   "pipego scheduler",
+	Long:    `pipego scheduler`,
+	Run: func(cmd *cobra.Command, args []string) {
+		if configFile == "" || listenUrl == "" {
+			_ = cmd.Help()
+			return
+		}
+		cobra.CheckErr(run(context.Background()))
+	},
+}
 
-	cfg, err := initConfig(ctx, *configFile)
-	if err != nil {
+// nolint: gochecknoinits
+func init() {
+	helper := func() {
+		if configFile != "" {
+			viper.SetConfigFile(configFile)
+		} else {
+			home, _ := homedir.Dir()
+			viper.AddConfigPath(home)
+			viper.AddConfigPath(".")
+			viper.SetConfigName("config")
+			viper.SetConfigType("yml")
+		}
+	}
+
+	cobra.OnInitialize(helper)
+
+	rootCmd.Flags().StringVarP(&configFile, "config-file", "c", "", "config file (.yml)")
+	_ = rootCmd.MarkFlagRequired("config-file")
+
+	rootCmd.Flags().StringVarP(&listenUrl, "listen-url", "l", "", "listen url (host:port)")
+	_ = rootCmd.MarkFlagRequired("listen-url")
+}
+
+func Execute() error {
+	return rootCmd.Execute()
+}
+
+func run(ctx context.Context) error {
+	cfg := config.New()
+
+	if err := initConfig(ctx, cfg); err != nil {
 		return errors.Wrap(err, "failed to init config")
 	}
 
@@ -65,25 +100,20 @@ func Run(ctx context.Context) error {
 	return nil
 }
 
-func initConfig(_ context.Context, name string) (*config.Config, error) {
-	c := config.New()
-
-	fi, err := os.Open(name)
-	if err != nil {
-		return c, errors.Wrap(err, "failed to open")
+func initConfig(_ context.Context, cfg *config.Config) error {
+	helper := func(cfg *config.Config) {
+		_ = viper.ReadInConfig()
+		_ = viper.Unmarshal(cfg)
 	}
 
-	defer func() {
-		_ = fi.Close()
-	}()
+	helper(cfg)
 
-	buf, _ := io.ReadAll(fi)
+	viper.WatchConfig()
+	viper.OnConfigChange(func(e fsnotify.Event) {
+		helper(cfg)
+	})
 
-	if err := yaml.Unmarshal(buf, c); err != nil {
-		return c, errors.Wrap(err, "failed to unmarshal")
-	}
-
-	return c, nil
+	return nil
 }
 
 func initParallelizer(ctx context.Context, cfg *config.Config) (parallelizer.Parallelizer, error) {
@@ -127,7 +157,7 @@ func initServer(ctx context.Context, cfg *config.Config, sched scheduler.Schedul
 		return nil, errors.New("failed to config")
 	}
 
-	c.Address = *listenUrl
+	c.Address = listenUrl
 	c.Config = *cfg
 	c.Scheduler = sched
 

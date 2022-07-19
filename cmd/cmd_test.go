@@ -2,61 +2,55 @@ package cmd
 
 import (
 	"context"
+	"io"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
+
+	"github.com/pipego/scheduler/config"
 )
 
-func TestInitConfig(t *testing.T) {
-	var err error
-	ctx := context.Background()
+func testInitConfig() *config.Config {
+	cfg := config.New()
 
-	_, err = initConfig(ctx, "invalid.yml")
-	assert.NotEqual(t, nil, err)
+	fi, _ := os.Open("../test/config/config.yml")
 
-	_, err = initConfig(ctx, "../test/config/invalid.yml")
-	assert.NotEqual(t, nil, err)
+	defer func() {
+		_ = fi.Close()
+	}()
 
-	_, err = initConfig(ctx, "../test/config/config.yml")
-	assert.Equal(t, nil, err)
+	buf, _ := io.ReadAll(fi)
+	_ = yaml.Unmarshal(buf, cfg)
+
+	return cfg
 }
 
 func TestInitParallelizer(t *testing.T) {
-	ctx := context.Background()
+	cfg := testInitConfig()
 
-	c, err := initConfig(ctx, "../test/config/config.yml")
-	assert.Equal(t, nil, err)
-
-	_, err = initParallelizer(ctx, c)
+	_, err := initParallelizer(context.Background(), cfg)
 	assert.Equal(t, nil, err)
 }
 
 func TestInitPlugin(t *testing.T) {
-	ctx := context.Background()
+	cfg := testInitConfig()
 
-	c, err := initConfig(ctx, "../test/config/config.yml")
-	assert.Equal(t, nil, err)
-
-	_, err = initPlugin(ctx, c)
+	_, err := initPlugin(context.Background(), cfg)
 	assert.Equal(t, nil, err)
 }
 
 func TestInitScheduler(t *testing.T) {
-	ctx := context.Background()
+	cfg := testInitConfig()
 
-	c, err := initConfig(ctx, "../test/config/config.yml")
-	assert.Equal(t, nil, err)
-
-	_, err = initScheduler(ctx, c, nil, nil)
+	_, err := initScheduler(context.Background(), cfg, nil, nil)
 	assert.Equal(t, nil, err)
 }
 
 func TestInitServer(t *testing.T) {
-	ctx := context.Background()
+	cfg := testInitConfig()
 
-	c, err := initConfig(ctx, "../test/config/config.yml")
-	assert.Equal(t, nil, err)
-
-	_, err = initServer(ctx, c, nil)
+	_, err := initServer(context.Background(), cfg, nil)
 	assert.Equal(t, nil, err)
 }

@@ -41,15 +41,16 @@ docker run -v "$PWD"/config:/tmp ghcr.io/pipego/scheduler:latest --config-file=/
 ## Usage
 
 ```
-usage: scheduler --config-file=CONFIG-FILE --listen-url=LISTEN-URL [<flags>]
-
 pipego scheduler
 
+Usage:
+  scheduler [flags]
+
 Flags:
-  --help                     Show context-sensitive help (also try --help-long and --help-man).
-  --version                  Show application version.
-  --config-file=CONFIG-FILE  Config file (.yml)
-  --listen-url=LISTEN-URL    Listen URL (host:port)
+  -c, --config-file string   config file (.yml)
+  -h, --help                 help for scheduler
+  -l, --listen-url string    listen url (host:port)
+  -v, --version              version for scheduler
 ```
 
 
