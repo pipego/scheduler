@@ -27,6 +27,13 @@ func testInitConfig() *config.Config {
 	return cfg
 }
 
+func TestInitLogger(t *testing.T) {
+	cfg := testInitConfig()
+
+	_, err := initLogger(context.Background(), cfg)
+	assert.Equal(t, nil, err)
+}
+
 func TestInitParallelizer(t *testing.T) {
 	cfg := testInitConfig()
 
@@ -51,6 +58,6 @@ func TestInitScheduler(t *testing.T) {
 func TestInitServer(t *testing.T) {
 	cfg := testInitConfig()
 
-	_, err := initServer(context.Background(), cfg, nil)
+	_, err := initServer(context.Background(), cfg, nil, nil)
 	assert.Equal(t, nil, err)
 }

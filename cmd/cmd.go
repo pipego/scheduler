@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/pipego/scheduler/config"
+	"github.com/pipego/scheduler/logger"
 	"github.com/pipego/scheduler/parallelizer"
 	"github.com/pipego/scheduler/plugin"
 	"github.com/pipego/scheduler/scheduler"
@@ -127,6 +128,11 @@ L:
 }
 
 func initPipe(ctx context.Context, cfg *config.Config) (server.Server, error) {
+	log, err := initLogger(ctx, cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to init logger")
+	}
+
 	pa, err := initParallelizer(ctx, cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to init parallelizer")
@@ -142,12 +148,23 @@ func initPipe(ctx context.Context, cfg *config.Config) (server.Server, error) {
 		return nil, errors.Wrap(err, "failed to init scheduler")
 	}
 
-	srv, err := initServer(ctx, cfg, sched)
+	srv, err := initServer(ctx, cfg, log, sched)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to init server")
 	}
 
 	return srv, nil
+}
+
+func initLogger(ctx context.Context, cfg *config.Config) (logger.Logger, error) {
+	c := logger.DefaultConfig()
+	if c == nil {
+		return nil, errors.New("failed to config")
+	}
+
+	c.Config = *cfg
+
+	return logger.New(ctx, c), nil
 }
 
 func initParallelizer(ctx context.Context, cfg *config.Config) (parallelizer.Parallelizer, error) {
@@ -185,7 +202,7 @@ func initScheduler(ctx context.Context, cfg *config.Config, pa parallelizer.Para
 	return scheduler.New(ctx, c), nil
 }
 
-func initServer(ctx context.Context, cfg *config.Config, sched scheduler.Scheduler) (server.Server, error) {
+func initServer(ctx context.Context, cfg *config.Config, log logger.Logger, sched scheduler.Scheduler) (server.Server, error) {
 	c := server.DefaultConfig()
 	if c == nil {
 		return nil, errors.New("failed to config")
@@ -193,6 +210,7 @@ func initServer(ctx context.Context, cfg *config.Config, sched scheduler.Schedul
 
 	c.Address = listenUrl
 	c.Config = *cfg
+	c.Logger = log
 	c.Scheduler = sched
 
 	return server.New(ctx, c), nil

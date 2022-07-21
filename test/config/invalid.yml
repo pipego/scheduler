@@ -31,4 +31,12 @@ spec:
         weight: 2
       - name: NodeResourcesBalancedAllocation
         path: ./score-noderesourcesbalancedallocation
-        weight
+        weight: 1
+  logger:
+    callerSkip: 2
+    fileCompress: false
+    fileName: scheduler.log
+    logLevel: debug
+    maxAge: 1
+    maxBackups: 60
+    maxSize

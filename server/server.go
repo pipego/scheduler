@@ -6,17 +6,19 @@ import (
 	"net"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
 	pb "github.com/pipego/scheduler/server/proto"
 
 	"github.com/pipego/scheduler/common"
 	"github.com/pipego/scheduler/config"
+	"github.com/pipego/scheduler/logger"
 	"github.com/pipego/scheduler/scheduler"
 )
 
 const (
-	KIND = "scheduler"
+	Kind = "scheduler"
 )
 
 type Server interface {
@@ -28,6 +30,7 @@ type Server interface {
 type Config struct {
 	Address   string
 	Config    config.Config
+	Logger    logger.Logger
 	Scheduler scheduler.Scheduler
 }
 
@@ -49,6 +52,10 @@ func DefaultConfig() *Config {
 }
 
 func (s *server) Init(ctx context.Context) error {
+	if err := s.cfg.Logger.Init(ctx); err != nil {
+		return errors.Wrap(err, "failed to init logger")
+	}
+
 	if err := s.cfg.Scheduler.Init(ctx); err != nil {
 		return errors.Wrap(err, "failed to init scheduler")
 	}
@@ -63,7 +70,10 @@ func (s *server) Init(ctx context.Context) error {
 
 func (s *server) Deinit(ctx context.Context) error {
 	s.srv.Stop()
-	return s.cfg.Scheduler.Deinit(ctx)
+	_ = s.cfg.Logger.Deinit(ctx)
+	_ = s.cfg.Scheduler.Deinit(ctx)
+
+	return nil
 }
 
 func (s *server) Run(_ context.Context) error {
@@ -74,7 +84,7 @@ func (s *server) Run(_ context.Context) error {
 func (s *server) SendServer(ctx context.Context, in *pb.ServerRequest) (*pb.ServerReply, error) {
 	var nodes []*common.Node
 
-	if in.GetKind() != KIND {
+	if in.GetKind() != Kind {
 		return &pb.ServerReply{Error: "invalid kind"}, nil
 	}
 
@@ -84,6 +94,7 @@ func (s *server) SendServer(ctx context.Context, in *pb.ServerRequest) (*pb.Serv
 	}
 
 	res := s.cfg.Scheduler.Run(ctx, s.task, nodes)
+	_ = s.writeLog(ctx, s.task, nodes, res)
 
 	return &pb.ServerReply{
 		Name:  res.Name,
@@ -135,4 +146,9 @@ func (s *server) sendHelper(_ context.Context, task *pb.Task, nodes []*pb.Node) 
 	}
 
 	return buf, nil
+}
+
+func (s *server) writeLog(_ context.Context, task *common.Task, nodes []*common.Node, result scheduler.Result) error {
+	s.cfg.Logger.Info("server", zap.Any("task", task), zap.Any("nodes", nodes), zap.Any("result", result))
+	return nil
 }
