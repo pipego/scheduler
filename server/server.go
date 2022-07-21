@@ -32,10 +32,9 @@ type Config struct {
 }
 
 type server struct {
-	cfg   *Config
-	nodes []*common.Node
-	srv   *grpc.Server
-	task  *common.Task
+	cfg  *Config
+	srv  *grpc.Server
+	task *common.Task
 	pb.UnimplementedServerProtoServer
 }
 
@@ -73,15 +72,18 @@ func (s *server) Run(_ context.Context) error {
 }
 
 func (s *server) SendServer(ctx context.Context, in *pb.ServerRequest) (*pb.ServerReply, error) {
+	var nodes []*common.Node
+
 	if in.GetKind() != KIND {
 		return &pb.ServerReply{Error: "invalid kind"}, nil
 	}
 
-	if err := s.sendHelper(ctx, in.GetSpec().GetTask(), in.GetSpec().GetNodes()); err != nil {
+	nodes, err := s.sendHelper(ctx, in.GetSpec().GetTask(), in.GetSpec().GetNodes())
+	if err != nil {
 		return &pb.ServerReply{Error: "invalid spec"}, nil
 	}
 
-	res := s.cfg.Scheduler.Run(ctx, s.task, s.nodes)
+	res := s.cfg.Scheduler.Run(ctx, s.task, nodes)
 
 	return &pb.ServerReply{
 		Name:  res.Name,
@@ -89,7 +91,9 @@ func (s *server) SendServer(ctx context.Context, in *pb.ServerRequest) (*pb.Serv
 	}, nil
 }
 
-func (s *server) sendHelper(_ context.Context, task *pb.Task, nodes []*pb.Node) error {
+func (s *server) sendHelper(_ context.Context, task *pb.Task, nodes []*pb.Node) ([]*common.Node, error) {
+	var buf []*common.Node
+
 	taskHelper := func(t *pb.Task) common.Resource {
 		return common.Resource{
 			MilliCPU: t.GetRequestedResource().MilliCPU,
@@ -127,8 +131,8 @@ func (s *server) sendHelper(_ context.Context, task *pb.Task, nodes []*pb.Node) 
 
 	for _, item := range nodes {
 		node := nodeHelper(item)
-		s.nodes = append(s.nodes, &node)
+		buf = append(buf, &node)
 	}
 
-	return nil
+	return buf, nil
 }
