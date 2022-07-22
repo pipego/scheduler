@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/hashicorp/go-hclog"
 	gop "github.com/hashicorp/go-plugin"
@@ -145,13 +146,15 @@ func (p *plugin) initPlugin(ctx context.Context, cfg *config.Plugin, impl gop.Pl
 	}
 
 	for _, item := range cfg.Disabled {
-		if err := helper(item.Name, item.Path); err != nil {
+		p, _ := filepath.Abs(item.Path)
+		if err := helper(item.Name, p); err != nil {
 			return cli, pl, err
 		}
 	}
 
 	for _, item := range cfg.Enabled {
-		if err := helper(item.Name, item.Path); err != nil {
+		p, _ := filepath.Abs(item.Path)
+		if err := helper(item.Name, p); err != nil {
 			return cli, pl, err
 		}
 	}
