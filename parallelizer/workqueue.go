@@ -63,7 +63,7 @@ func ParallelizeUntil(ctx context.Context, workers, pieces int, doWorkPiece DoWo
 	wg.Add(workers)
 
 	for i := 0; i < workers; i++ {
-		go func() {
+		go func(toProcess chan int, chunkSize int, pieces int, stop <-chan struct{}, doWorkPiece DoWorkPieceFunc) {
 			defer wg.Done()
 			for chunk := range toProcess {
 				start := chunk * chunkSize
@@ -80,7 +80,7 @@ func ParallelizeUntil(ctx context.Context, workers, pieces int, doWorkPiece DoWo
 					}
 				}
 			}
-		}()
+		}(toProcess, chunkSize, pieces, stop, doWorkPiece)
 	}
 
 	wg.Wait()

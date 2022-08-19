@@ -221,12 +221,12 @@ func runPipe(ctx context.Context, srv server.Server) error {
 		return errors.Wrap(err, "failed to init")
 	}
 
-	go func() {
+	go func(ctx context.Context, srv server.Server) {
 		if err := srv.Run(ctx); err != nil {
 			fmt.Println("failed to run")
 			return
 		}
-	}()
+	}(ctx, srv)
 
 	return nil
 }
