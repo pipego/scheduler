@@ -23,7 +23,7 @@ plugin: go-plugin
 .PHONY: plugin
 
 proto: go-proto
- .PHONY: proto
+.PHONY: proto
 
 test: go-test
 .PHONY: test
