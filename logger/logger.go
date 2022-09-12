@@ -114,7 +114,5 @@ func (l *logger) callerFields() (fields []zap.Field) {
 	funcName := runtime.FuncForPC(pc).Name()
 	funcName = path.Base(funcName)
 
-	fields = append(fields, zap.String("func", funcName), zap.String("file", file), zap.Int("line", line))
-
-	return
+	return append(fields, zap.String("func", funcName), zap.String("file", file), zap.Int("line", line))
 }
