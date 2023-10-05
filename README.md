@@ -69,11 +69,11 @@ metadata:
 spec:
   fetch:
     disabled:
-      - name: LocalHost
-        path: ./fetch-localhost
-    enabled:
       - name: MetalFlow
         path: ./fetch-metalflow
+    enabled:
+      - name: LocalHost
+        path: ./fetch-localhost
   filter:
     enabled:
       - name: NodeName
