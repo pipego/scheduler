@@ -1,0 +1,6 @@
+FROM gcr.io/distroless/base-debian11 AS production-stage
+WORKDIR /
+COPY scheduler /
+USER nonroot:nonroot
+EXPOSE 28082
+CMD ["/scheduler"]
