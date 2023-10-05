@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	mock "github.com/pipego/scheduler/server/mock"
 	pb "github.com/pipego/scheduler/server/proto"

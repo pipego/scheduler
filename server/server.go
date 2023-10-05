@@ -9,12 +9,11 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	pb "github.com/pipego/scheduler/server/proto"
-
 	"github.com/pipego/scheduler/common"
 	"github.com/pipego/scheduler/config"
 	"github.com/pipego/scheduler/logger"
 	"github.com/pipego/scheduler/scheduler"
+	pb "github.com/pipego/scheduler/server/proto"
 )
 
 const (
