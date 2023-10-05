@@ -18,7 +18,7 @@ builds:
 
 dockers:
   - image_templates: ["ghcr.io/pipego/{{ .ProjectName }}:{{ .Tag }}-amd64"]
-    dockerfile: Dockerfile-goreleaser
+    dockerfile: Dockerfile
     use: docker
     build_flag_templates:
       - --platform=linux/amd64

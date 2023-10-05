@@ -1,8 +1,6 @@
 FROM golang:latest AS build-stage
 WORKDIR /go/src/app
 COPY . .
-RUN apt update && \
-    apt install -y upx
 RUN make build && \
     make plugin
 
