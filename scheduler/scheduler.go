@@ -226,15 +226,15 @@ func (s *scheduler) selectHost(_ context.Context, scores []nodeScore) (string, e
 	buf := helper(scores)
 
 	count := 1
-	max := int64(-1)
+	_max := int64(-1)
 	selected := ""
 
 	for key, val := range buf {
-		if val > max {
-			max = val
+		if val > _max {
+			_max = val
 			selected = key
 			count = 1
-		} else if val == max {
+		} else if val == _max {
 			count++
 			if rand.Intn(count) == 0 {
 				// Replace the candidate with probability of 1/count
